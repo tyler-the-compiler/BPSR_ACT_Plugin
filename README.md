@@ -11,6 +11,7 @@ Install Instructions:
 - Requires ACT: https://advancedcombattracker.com/download.php
 
 - Copy the entire folder into your ACT plugins folder (usually appdata/roaming/Advanced Combat Tracker/Plugins)
+- Copy "System.Runtime.CompilerServices.Unsafe.dll" from the folder to ACT's install location (usually C:\Program Files(x86)\Advanced Combat Tracker). This will hopefully be rectified in the future but it's a stopgap solution for now
 - In ACT, click on the "Plugins" tab
 - Click "Browse..."
 - Navigate to the directory where you dropped the folder and select "BPSR_ACT_Plugin.dll" (NOT "BPSR_ACT_Plugin.Core.dll")
