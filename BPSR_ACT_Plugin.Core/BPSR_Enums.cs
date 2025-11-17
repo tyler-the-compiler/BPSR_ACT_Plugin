@@ -17,13 +17,14 @@ namespace BPSR_ACT_Plugin.Core
             {75, "Skimmer's Lair" },
             {6007, "Goblin Lair (Normal)" },
             {6008, "Goblin Lair (Hard)" },
-            {6009, "Goblin Lair (Master 1)" }
+            {6009, "Goblin Lair (Master 1)" },
+            {1331, "Dark Mist Fortress (Normal)" }
         };
         public static Dictionary<int, string> MonsterMap = new Dictionary<int, string>
         {
             {10007, "Storm Goblin King" },
-            {10010, "Tempest Ogre" }
-
+            {10010, "Tempest Ogre" },
+            {103588, "Denvel" }
         };
         public enum LogEventIds
         {
@@ -123,6 +124,37 @@ namespace BPSR_ACT_Plugin.Core
             Light = 7,
             Dark = 8,
             Count = 9
+        };
+
+        public static Dictionary<string, string> SkillKVPair = new Dictionary<string, string>{
+            {"1006940", "Arcane! Cocoon Tech" },
+            {"1002830", "Arcane! Frostquake" },
+            {"2002440", "Arcane! Thunderfall Grasp" },
+            {"2002840", "Arcane! Swift Vortex" },
+            {"1700440", "Arcane! Furious Hammer" },
+            {"1701", "Judgment Blade 1" },
+            {"1702", "Judgment Blade 2" },
+            {"1703", "Judgment Blade 3" },
+            {"1704", "Judgment Blade 4" },
+            {"1705", "Overdrive" },
+            {"1713", "Oblivion Combo" },
+            {"1714", "Iaido Slash" },
+            {"1715", "Moonstrike" },
+            {"1717", "Flash Strike" },
+            {"1718", "Raijin Dash" },
+            {"1719", "Scythe Wheel" },
+            {"44701", "Scythe Wheel (DoT)" },
+            {"1720", "True Sight" },
+            {"1724", "Thundercut" },
+            {"1730", "Volt Surge" },
+            {"1731", "Stormflash" },
+            {"1733", "Storm Scythe" },
+            {"1734", "Thunder Cut" },
+            {"1735", "Dracoflash" },
+            {"1736", "Phantom Slash" },
+            {"1737", "Divine Sickle" },
+            {"1738", "Chaos Breaker" },
+            {"179908", "Blade Intent Thunder Strike" }
         };
     }
 }

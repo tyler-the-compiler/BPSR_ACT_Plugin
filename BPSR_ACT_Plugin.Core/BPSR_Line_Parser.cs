@@ -38,18 +38,18 @@ namespace BPSR_ACT_Plugin.Core
             }
             public void Set(string skillId)
             {
-                if (skillKVPair.ContainsKey(skillId))
+                if (SkillKVPair.ContainsKey(skillId))
                 {
-                    name = skillKVPair[skillId];
+                    name = SkillKVPair[skillId];
                 }
                 id = skillId;
             }
 
             public void Set(string skillId, int skillDmg)
             {
-                if (skillKVPair.ContainsKey(skillId))
+                if (SkillKVPair.ContainsKey(skillId))
                 {
-                    name = skillKVPair[skillId];
+                    name = SkillKVPair[skillId];
                 }
                 id = skillId;
                 dmgValue = skillDmg;
@@ -57,9 +57,9 @@ namespace BPSR_ACT_Plugin.Core
 
             public void Set(string aId, int skillDmg, string damageModifier)
             {
-                if (skillKVPair.ContainsKey(aId))
+                if (SkillKVPair.ContainsKey(aId))
                 {
-                    name = skillKVPair[aId];
+                    name = SkillKVPair[aId];
                 }
                 id = aId;
                 dmgValue = skillDmg;
@@ -68,9 +68,9 @@ namespace BPSR_ACT_Plugin.Core
 
             public void Set(string aId, int skillDmg, string damageModifier, string dType, string dSource)
             {
-                if (skillKVPair.ContainsKey(aId))
+                if (SkillKVPair.ContainsKey(aId))
                 {
-                    name = skillKVPair[aId];
+                    name = SkillKVPair[aId];
                 }
                 id = aId;
                 dmgValue = skillDmg;
@@ -80,9 +80,9 @@ namespace BPSR_ACT_Plugin.Core
             }
             public void Set(string aId, int skillDmg, string dMod, string dType, string dSource, string element)
             {
-                if (skillKVPair.ContainsKey(aId))
+                if (SkillKVPair.ContainsKey(aId))
                 {
-                    name = skillKVPair[aId];
+                    name = SkillKVPair[aId];
                 }
                 else
                 {
@@ -103,6 +103,9 @@ namespace BPSR_ACT_Plugin.Core
             private string name;
             private string id;
             private Int64 instance;
+
+            private string job;
+            private string abilityScore;
 
             private bool empty;
             private string displayName;
@@ -202,6 +205,7 @@ namespace BPSR_ACT_Plugin.Core
             public string Name
             {
                 get { return name; }
+                set { name = value; }
             }
 
             public string Id
@@ -224,6 +228,8 @@ namespace BPSR_ACT_Plugin.Core
                 get { return raw; }
             }
 
+            public string Job { get { return job; } set { job = value; } }
+            public string AbilityScore { get { return abilityScore; } set { abilityScore = value; } }
             public void Fix(String replacementSource)
             {
                 // Fix bad sources...
@@ -252,37 +258,6 @@ namespace BPSR_ACT_Plugin.Core
             action1.Reset();
             action2.Reset();
         }
-
-        public static Dictionary<string, string> skillKVPair = new Dictionary<string, string>{
-            {"1006940", "Arcane! Cocoon Tech" },
-            {"1002830", "Arcane! Frostquake" },
-            {"2002440", "Arcane! Thunderfall Grasp" },
-            {"2002840", "Arcane! Swift Vortex" },
-            {"1700440", "Arcane! Furious Hammer" },
-            {"1701", "Judgment Blade 1" },
-            {"1702", "Judgment Blade 2" },
-            {"1703", "Judgment Blade 3" },
-            {"1704", "Judgment Blade 4" },
-            {"1705", "Overdrive" },
-            {"1713", "Oblivion Combo" },
-            {"1714", "Iaido Slash" },
-            {"1715", "Moonstrike" },
-            {"1717", "Flash Strike" },
-            {"1718", "Raijin Dash" },
-            {"1719", "Scythe Wheel" },
-            {"44701", "Scythe Wheel (DoT)" },
-            {"1720", "True Sight" },
-            {"1724", "Thundercut" },
-            {"1730", "Volt Surge" },
-            {"1731", "Stormflash" },
-            {"1733", "Storm Scythe" },
-            {"1734", "Thunder Cut" },
-            {"1735", "Dracoflash" },
-            {"1736", "Phantom Slash" },
-            {"1737", "Divine Sickle" },
-            {"1738", "Chaos Breaker" },
-            {"179908", "Blade Intent Thunder Strike" }
-        };
 
         public static Dictionary<string, string> enemyIDKVPair = new Dictionary<string, string>
         {
@@ -318,20 +293,62 @@ namespace BPSR_ACT_Plugin.Core
                 var isAttackerSelf = lineFields[10] == "True";
                 var isTargetSelf = lineFields[11] == "True";
 
+                var spIdSuccess = int.TryParse(lineFields[12], out int sourceProfessionId);
+                var sFpSuccess = int.TryParse(lineFields[13], out int sourceFightPoint);
+                var tpIdSuccess = int.TryParse(lineFields[14], out int targetProfessionId);
+                var tFpSuccess = int.TryParse(lineFields[15], out int targetFightPoint);
+
+                source.DisplayName = sName;
+                target.DisplayName = tName;
+
                 if (isAttackerSelf)
                 {
                     sName = "YOU";
+                    source.DisplayName = "YOU";
                 }
+                else if ((!sName.StartsWith("#")) && sName.Contains("#"))
+                {
+                    var split = sName.Split('#');
+                    source.DisplayName = split[0];
+                    sName = "#" + split[1];
+                }
+
                 if (isTargetSelf)
                 {
                     tName = "YOU";
+                    target.DisplayName = "YOU";
                 }
+                else if ((!tName.StartsWith("#")) && tName.Contains("#"))
+                {
+                    var split = tName.Split('#');
+                    target.DisplayName = split[0];
+                    tName = "#" + split[1];
+                }
+
+                if (spIdSuccess)
+                {
+                    source.Job = GetProfessionFromId(sourceProfessionId);
+                }
+
+                if (sFpSuccess)
+                {
+                    source.AbilityScore = sourceFightPoint.ToString();
+                }
+
+                if (tpIdSuccess)
+                {
+                    target.Job = GetProfessionFromId(targetProfessionId);
+                }
+
+                if (tFpSuccess)
+                {
+                    target.AbilityScore = targetFightPoint.ToString();
+                }
+
                 source.Set(sName);
                 target.Set(tName);
                 action1.Set(skillId, Convert.ToInt32(skillDmg), damageModifier, actionType, actionCategory, element);
 
-                var regexMatchSourceName = entityNameCleanupRegex.Match(source.Name);
-                var regexMatchTargetName = entityNameCleanupRegex.Match(target.Name);
                 return true;
             }
             if (lineFields[1] == LogEventIds.EVENT_HEAL.ToString())
@@ -350,51 +367,58 @@ namespace BPSR_ACT_Plugin.Core
                 encounterLevelUUID = ""; //lineFields.Groups[12].Value;
                 var isAttackerSelf = lineFields[9] == "True";
                 var isTargetSelf = lineFields[10] == "True";
+                var spIdSuccess = int.TryParse(lineFields[11], out int sourceProfessionId);
+                var sFpSuccess = int.TryParse(lineFields[12], out int sourceFightPoint);
+                var tpIdSuccess = int.TryParse(lineFields[13], out int targetProfessionId);
+                var tFpSuccess = int.TryParse(lineFields[14], out int targetFightPoint);
 
                 if (isAttackerSelf)
                 {
                     sName = "YOU";
+                    source.DisplayName = "YOU";
                 }
+                else if (!sName.StartsWith("#") && sName.Contains("#"))
+                {
+                    var split = sName.Split('#');
+                    source.DisplayName = split[0];
+                    sName = "#" + split[1];
+                }
+
                 if (isTargetSelf)
                 {
                     tName = "YOU";
+                    target.DisplayName = "YOU";
+                }
+                else if (!tName.StartsWith("#") && tName.Contains("#"))
+                {
+                    var split = tName.Split('#');
+                    target.DisplayName = split[0];
+                    tName = "#" + split[1];
+                }
+
+                if (spIdSuccess)
+                {
+                    source.Job = GetProfessionFromId(sourceProfessionId);
+                }
+
+                if (sFpSuccess)
+                {
+                    source.AbilityScore = sourceFightPoint.ToString();
+                }
+
+                if (tpIdSuccess)
+                {
+                    target.Job = GetProfessionFromId(targetProfessionId);
+                }
+
+                if (tFpSuccess)
+                {
+                    target.AbilityScore = targetFightPoint.ToString();
                 }
 
                 source.Set(sName);
                 target.Set(tName);
                 action1.Set(skillId, Convert.ToInt32(skillDmg), damageModifier, actionType, actionCategory, element);
-
-                var regexMatchSourceName = entityNameCleanupRegex.Match(source.Name);
-                var regexMatchTargetName = entityNameCleanupRegex.Match(target.Name);
-
-                //if (source.Name.Contains($"#{_myUID}(player)"))
-                //{
-                //    source.Set("YOU");
-                //}
-                //else
-                //{
-                //    var displayName = source.Name.Replace(regexMatchSourceName.Groups[1].Value, "");
-                //    displayName = String.IsNullOrEmpty(displayName) ? $"Placeholder #{regexMatchSourceName.Groups[2].Value}" : source.DisplayName;
-                //}
-                //if (source.Name.Contains("(enemy)") && ActGlobals.oFormActMain.SelectiveListGetSelected(source.Name))
-                //{
-                //    ActGlobals.oFormActMain.SelectiveListRemove(source.Name, true);
-                //}
-
-                //if (target.Name.Contains($"#{_myUID}(player)"))
-                //{
-                //    target.Set("YOU");
-                //}
-                //else
-                //{
-                //    var displayName = target.Name.Replace(regexMatchSourceName.Groups[1].Value, "");
-                //    displayName = String.IsNullOrEmpty(displayName) ? $"Placeholder #{regexMatchSourceName.Groups[2].Value}" : target.DisplayName;
-                //}
-
-                //if (target.Name.Contains("(enemy)") && ActGlobals.oFormActMain.SelectiveListGetSelected(target.Name))
-                //{
-                //    ActGlobals.oFormActMain.SelectiveListRemove(target.Name, true);
-                //}
 
                 return true;
             }
@@ -410,13 +434,7 @@ namespace BPSR_ACT_Plugin.Core
 
                 return true;
             }
-            //if (lineFields[1] == LogEventIds.EVENT_PLAYER_DIE.ToString())
-            //{
-            //    action1.type = lineFields[1];
-            //    source.Set(lineFields[2]);
 
-            //    return true;
-            //}
             return false;
         }
         private string ConvertCNToENElement(char CN)
@@ -443,6 +461,37 @@ namespace BPSR_ACT_Plugin.Core
                     return "Light";
                 case "6697":
                     return "Dark";
+                default:
+                    return "???";
+            }
+        }
+
+        private string GetProfessionFromId(int professionId)
+        {
+            switch ((ProfessionType)professionId)
+            {
+                case ProfessionType.Stormblade:
+                    return "Stormblade";
+                case ProfessionType.FrostMage:
+                    return "Frost Mage";
+                case ProfessionType.FireWarrior:
+                    return "Fire Warrior";
+                case ProfessionType.WindKnight:
+                    return "Wind Knight";
+                case ProfessionType.VerdantOracle:
+                    return "Verdant Oracle";
+                case ProfessionType.Marksman_Cannon:
+                    return "Gunner";
+                case ProfessionType.HeavyGuardian:
+                    return "Heavy Guardian";
+                case ProfessionType.SoulMusician_Scythe:
+                    return "Reaper";
+                case ProfessionType.Marksman:
+                    return "Marksman";
+                case ProfessionType.ShieldKnight:
+                    return "Shield Knight";
+                case ProfessionType.SoulMusician:
+                    return "Beat Performer";
                 default:
                     return "???";
             }

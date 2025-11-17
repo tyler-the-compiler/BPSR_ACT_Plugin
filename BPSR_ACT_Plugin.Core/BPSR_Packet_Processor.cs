@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using static BPSR_ACT_Plugin.Core.BPSR_Enums;
 using ZstdSharp;
+using System.Text;
 
 
 namespace BPSR_ACT_Plugin.Core
@@ -193,22 +194,34 @@ namespace BPSR_ACT_Plugin.Core
                 var hpLessenValue = syncDamageInfo.HpLessenValue;
                 var damageElement = GetDamageElement((EDamageProperty)syncDamageInfo.Property);
                 var damageSource = syncDamageInfo.DamageSource;
-                var isAttackerUser = CurrentUserUID > 0 && attackerUid == CurrentUserUID;
-                var isTargetUser = CurrentUserUID > 0 && targetUid == CurrentUserUID;
+                var isAttackerCurrentUser = CurrentUserUID > 0 && attackerUid == CurrentUserUID;
+                var isTargetCurrentUser = CurrentUserUID > 0 && targetUid == CurrentUserUID;
 
                 if (isTargetPlayer)
                 {
-                    if (isHeal)
+                    var targetPlayerName = this.GetPlayerAttribute(targetUid, "name");
+                    var actionTarget = $"{targetPlayerName ?? ""}#{targetUid}";
+                    var targetPlayerProfession = this.GetPlayerAttribute(targetUid, "profession") ?? "-1";
+                    var targetPlayerFightPoint = this.GetPlayerAttribute(targetUid, "fight_point") ?? "-1";
+
+                    if (isHeal) //player heals another player
                     {
-                        eventLogger.AddHealingLogLine(attackerUid, targetUid, skillId, damageElement, damage, isCrit, isLucky, isAttackerUser, isTargetUser);
+                        var srcPlayerName = this.GetPlayerAttribute(attackerUid, "name");
+                        var actionSource = $"{srcPlayerName ?? ""}#{attackerUid}";
+                        var sourcePlayerProfession = this.GetPlayerAttribute(attackerUid, "profession") ?? "-1";
+                        var sourcePlayerFightPoint = this.GetPlayerAttribute(attackerUid, "fight_point") ?? "-1";
+
+                        eventLogger.AddHealingLogLine(actionSource, actionTarget, skillId, damageElement, damage, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, targetPlayerProfession, sourcePlayerFightPoint, targetPlayerFightPoint);
                     }
-
-                    if (isDead && PlayerCache.ContainsKey(targetUid) && PlayerCache[targetUid].ContainsKey("dead") && PlayerCache[targetUid]["dead"] == "no")
+                    else if (!isDead) //enemy attacks player
                     {
-                        var name = this.GetPlayerAttribute(targetUid, "name");
-                        var attackTarget = $"{name ?? ""}#{targetUid}";
-
-                        eventLogger.AddDeathLogLine(attackerUid.ToString(), attackTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerUser, isTargetUser);
+                        var enemyName = this.GetEnemyAttribute(attackerUid, "name");
+                        var actionSource = $"{enemyName ?? ""}#{attackerUid}";
+                        eventLogger.AddDamageLogLine(actionSource, actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
+                    }
+                    else if (isDead && PlayerCache.ContainsKey(targetUid) && PlayerCache[targetUid].ContainsKey("dead") && PlayerCache[targetUid]["dead"] == "no") //enemy attacks player and player dies
+                    {
+                        eventLogger.AddDeathLogLine(attackerUid.ToString(), actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
                         SetPlayerAttribute(targetUid, "hp", 0);
                     }
 
@@ -219,15 +232,17 @@ namespace BPSR_ACT_Plugin.Core
                 {
                     if (isAttackerPlayer)
                     {
-                        if (!isHeal)
+                        if (!isHeal) //player attacks something
                         {
                             var playerName = this.GetPlayerAttribute(attackerUid, "name");
                             var attackSource = $"{playerName ?? ""}#{attackerUid}";
+                            var sourcePlayerProfession = this.GetPlayerAttribute(attackerUid, "profession") ?? "-1";
+                            var sourcePlayerFightPoint = this.GetPlayerAttribute(attackerUid, "fight_point") ?? "-1";
 
                             var enemyName = this.GetEnemyAttribute(targetUid, "name");
                             var attackTarget = $"{enemyName ?? ""}#{targetUid}";
 
-                            eventLogger.AddDamageLogLine(attackSource, attackTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerUser, isTargetUser);
+                            eventLogger.AddDamageLogLine(attackSource, attackTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, "_", sourcePlayerFightPoint, "_");
                         }
 
                         //SetPlayerAttribute(attackerUid, "dead", isDead ? "yes" : "no");
@@ -297,6 +312,11 @@ namespace BPSR_ACT_Plugin.Core
             {
                 SetPlayerAttribute(playerUid, "fight_point", charBase.FightPoint);
             }
+            if (vData.ProfessionList != null && vData.ProfessionList.CurProfessionId > 0)
+            {
+                SetPlayerAttribute(playerUid, "profession", vData.ProfessionList.CurProfessionId);
+            }
+
 
         }
 
@@ -308,13 +328,7 @@ namespace BPSR_ACT_Plugin.Core
             //uhh I think this means that when there is a userfightattr, we are in combat and when there isn't, we are not?
             //and the sequence we are looking for in here is [16, 0, 0, 0], which equates to tag 16 in the protobuf data, which is
             //the userfight attr within vdata
-            var fightDataSequenceExists = !new BoyerMoore(new byte[] { 16, 0, 0, 0 }).Search(syncContainerDirtyData.VData.Buffer.ToArray()).IsNullOrEmpty();
-
-            if (fightDataSequenceExists && !inCombat)
-            {
-                inCombat = true;
-                //add eventlogger in combat log line
-            }
+            var fightDataSequenceExists = !new BoyerMoore(new byte[] { 16, 0, 0, 0 }).Search(syncContainerDirtyData.VData.Buffer.ToByteArray()).IsNullOrEmpty();
 
             if (!fightDataSequenceExists && inCombat)
             {
@@ -322,26 +336,73 @@ namespace BPSR_ACT_Plugin.Core
                 //add eventlogger out of combat log line
             }
 
-            //var vDataBufferArray = syncContainerDirtyData.VData.Buffer.ToArray();
-            //var sceneDataSequenceSearch = new BoyerMoore(new byte[] { 3, 0, 0, 0 }).Search(vDataBufferArray);
-            //var sceneDataSequenceExists = !sceneDataSequenceSearch.IsNullOrEmpty();
+            try
+            {
+                var buf = syncContainerDirtyData.VData.Buffer.ToByteArray();
+                using (var reader = new BinaryReader(new MemoryStream(buf)))
+                {
+                    if (!DoesStreamHaveIdentifier(reader)) { return; }
+                    var fieldId = reader.ReadUInt32();
+                    _ = reader.ReadUInt32();
+                    var playerUid = CurrentUserUID;
+                    switch (fieldId) {
 
-            //if (sceneDataSequenceExists)
-            //{
-            //    var mainIndex = sceneDataSequenceSearch.First();
-            //    var sceneDataSubArray = vDataBufferArray.SubArray(mainIndex);
-            //    var levelMapIdSearch = new BoyerMoore(new byte[] { 6, 0, 0, 0 }).Search(sceneDataSubArray);
-            //    if (levelMapIdSearch.IsNullOrEmpty()) { return; }
-            //    var levelMapIdIndex = levelMapIdSearch.First();
+                        case 2:
+                            if (!DoesStreamHaveIdentifier(reader)) { break; }
+                            fieldId = reader.ReadUInt32();
+                            _ = reader.ReadInt32();
+                            switch (fieldId) {
+                                case 5:
+                                    var playerName = StreamReadString(reader);
+                                    if (!string.IsNullOrEmpty(playerName))
+                                    {
+                                        SetPlayerAttribute(playerUid, "name", playerName);
+                                    }
+                                    break;
+                                case 35:
+                                    var fightPoint = (int)reader.ReadUInt32();
+                                    _ = reader.ReadInt32();
+                                    if (fightPoint != 0)
+                                    {
+                                        SetPlayerAttribute(playerUid, "fight_point", fightPoint);
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        case 16:
+                            if (!inCombat)
+                            {
+                                inCombat = true;
+                                //add eventlogger out of combat log line
+                            }
+                            break;
+                        case 61:
+                            if (!DoesStreamHaveIdentifier(reader)) { break; }
+                            fieldId = reader.ReadUInt32();
+                            _ = reader.ReadInt32();
+                            if (fieldId == 1)
+                            {
+                                var professionId = (int)reader.ReadUInt32();
+                                _ = reader.ReadInt32();
+                                if (professionId != 0)
+                                {
+                                    SetPlayerAttribute(playerUid, "profession", professionId);
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
 
-            //    using (var reader = new BinaryReader(new MemoryStream(sceneDataSubArray)))
-            //    {
-            //        reader.BaseStream.Seek(levelMapIdIndex + 16, SeekOrigin.Begin);
-            //        var levelMapId = reader.ReadUInt32();
-            //        var levelMapIdReverse = BinaryPrimitives.ReverseEndianness(levelMapId);
-            //        var a = 1;
-            //    }
-            //}
+            }
+
+
         }
 
         private void ProcessSyncToMeDeltaInfo(byte[] payloadBuffer)
@@ -592,24 +653,36 @@ namespace BPSR_ACT_Plugin.Core
 
         private bool DoesStreamHaveIdentifier(BinaryReader reader)
         {
-            var startPosition = reader.BaseStream.Position;
-            if ((reader.BaseStream.Length - reader.BaseStream.Position) < 8) { return false; }
+            var baseStream = reader.BaseStream;
+            if (baseStream.Position + 8 > baseStream.Length) return false;
 
             var identifier = reader.ReadUInt32();
-            reader.ReadInt32();
+            var reversed = BinaryPrimitives.ReverseEndianness(identifier);
+            _ = reader.ReadInt32();
 
             if (identifier != 0xfffffffe)
             {
-                reader.BaseStream.Seek(startPosition, SeekOrigin.Begin);
                 return false;
             }
 
-            var uIdentifier = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
-            reader.ReadInt32();
+            if (baseStream.Position + 8 > baseStream.Length) return false;
 
-            reader.BaseStream.Seek(startPosition, SeekOrigin.Begin);
+            _ = reader.ReadInt32();
+            _ = reader.ReadInt32();
 
             return true;
+        }
+
+        private string StreamReadString(BinaryReader reader)
+        {
+            var length = reader.ReadUInt32();
+            _ = reader.ReadUInt32();
+
+            var bytes = length > 0 ? reader.ReadBytes((int)length) : Array.Empty<byte>();
+
+            _ = reader.ReadInt32();
+
+            return bytes.Length == 0 ? string.Empty : Encoding.UTF8.GetString(bytes);
         }
 
     }

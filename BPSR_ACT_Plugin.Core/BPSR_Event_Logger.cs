@@ -29,21 +29,21 @@ namespace BPSR_ACT_Plugin.Core
             AddLogLine(line);
         }
 
-        public void AddDeathLogLine(string sourceUid, string destinationUid, int skillId, string element, long damageValue, long targetDamageReceived, bool isCrit, bool isLucky, bool isAttackerUser, bool isTargetUser)
+        public void AddDeathLogLine(string sourceUid, string destinationUid, int skillId, string element, long damageValue, long targetDamageReceived, bool isCrit, bool isLucky, bool isAttackerUser, bool isTargetUser, string sourceProfessionId, string targetProfessionId, string sourcePlayerFightPoint, string targetPlayerFightPoint)
         {
-            var line = $"{LogEventIds.EVENT_PLAYER_DIE}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{targetDamageReceived}|{isCrit}|{isLucky}|{isAttackerUser}|{isTargetUser}";
+            var line = $"{LogEventIds.EVENT_PLAYER_DIE}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{targetDamageReceived}|{isCrit}|{isLucky}|{isAttackerUser}|{isTargetUser}|{sourceProfessionId}|{targetProfessionId}|{sourcePlayerFightPoint}|{targetPlayerFightPoint}";
             AddLogLine(line);
         }
 
-        public void AddDamageLogLine(string sourceUid, string destinationUid, int skillId, string element, long damageValue, long targetDamageReceived, bool isCrit, bool isLucky, bool isAttackerUser, bool isTargetUser)
+        public void AddDamageLogLine(string sourceUid, string destinationUid, int skillId, string element, long damageValue, long targetDamageReceived, bool isCrit, bool isLucky, bool isAttackerUser, bool isTargetUser, string sourceProfessionId, string targetProfessionId, string sourcePlayerFightPoint, string targetPlayerFightPoint)
         {
-            var line = $"{LogEventIds.EVENT_DAMAGE}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{targetDamageReceived}|{isCrit}|{isLucky}|{isAttackerUser}|{isTargetUser}";
+            var line = $"{LogEventIds.EVENT_DAMAGE}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{targetDamageReceived}|{isCrit}|{isLucky}|{isAttackerUser}|{isTargetUser}|{sourceProfessionId}|{targetProfessionId}|{sourcePlayerFightPoint}|{targetPlayerFightPoint}";
             AddLogLine(line);
         }
 
-        public void AddHealingLogLine(long sourceUid, long destinationUid, int skillId, string element, long damageValue, bool isCrit, bool isLucky, bool isAttackerUser, bool isTargetUser)
+        public void AddHealingLogLine(string sourceUid, string destinationUid, int skillId, string element, long damageValue, bool isCrit, bool isLucky, bool isAttackerUser, bool isTargetUser, string sourceProfessionId, string targetProfessionId, string sourcePlayerFightPoint, string targetPlayerFightPoint)
         {
-            var line = $"{LogEventIds.EVENT_HEAL}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{isCrit}|{isLucky}|{isAttackerUser}|{isTargetUser}";
+            var line = $"{LogEventIds.EVENT_HEAL}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{isCrit}|{isLucky}|{isAttackerUser}|{isTargetUser}|{sourceProfessionId}|{targetProfessionId}|{sourcePlayerFightPoint}|{targetPlayerFightPoint}";
             AddLogLine(line);
         }
 

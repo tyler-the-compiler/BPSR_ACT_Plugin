@@ -5,6 +5,8 @@ using PcapDotNet.Packets;
 using PcapDotNet.Packets.Ethernet;
 using PcapDotNet.Packets.Ip;
 using PcapDotNet.Packets.IpV4;
+using SharpPcap;
+using SharpPcap.LibPcap;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -21,7 +23,7 @@ namespace BPSR_ACT_Plugin.Core
     {
         private DateTime cleanupLastTime;
         private const long FRAGMENT_TIMEOUT = 30000;
-        private LivePacketDevice device;
+        private ICaptureDevice device;
         private string currentServer;
         private byte[] tcpPayloadData;
         private long tcpNextSeq = -1;
@@ -53,12 +55,6 @@ namespace BPSR_ACT_Plugin.Core
 
         public BPSR_Packet_Interceptor()
         {
-            device = AutoFindNetworkDevice();
-
-            if (device == null)
-            {
-                return;
-            }
             packetProcessor = new BPSR_Packet_Processor();
 
             ClearTCPCache();
@@ -66,28 +62,23 @@ namespace BPSR_ACT_Plugin.Core
 
         public void Start()
         {
-
-            using (var communicator = device.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000))
+            device = AutoFindNetworkDevice();
+            device.Open(new DeviceConfiguration
             {
-                if (communicator.DataLink.Kind != DataLinkKind.Ethernet) { return; }
-                communicator.SetKernelMinimumBytesToCopy(0);
-                communicator.SetFilter("ip and tcp");
-                PcapDotNet.Packets.Packet packet;
-                while (true)
-                {
-                    var result = communicator.ReceivePacket(out packet);
-
-                    if (result != PacketCommunicatorReceiveResult.Ok) { continue; }
-                    ProcessEthernetPacket(packet);
-
-                }
-            }
+                Mode = DeviceModes.Promiscuous,
+                Immediate = true,
+                ReadTimeout = 1000,
+                BufferSize = 1024 * 1024 * 4
+            });
+            device.Filter = "ip and tcp";
+            device.OnPacketArrival += new PacketArrivalEventHandler(ProcessEthernetPacket);
+            device.StartCapture();
         }
 
-        private LivePacketDevice AutoFindNetworkDevice()
+        private ICaptureDevice AutoFindNetworkDevice()
         {
             Debug.WriteLine("Auto detecting network interface");
-            var allDevices = LivePacketDevice.AllLocalMachine;
+            var allDevices = CaptureDeviceList.Instance;
             if (allDevices.Count == 0)
             {
                 Debug.WriteLine("No Devices Found");
@@ -102,7 +93,7 @@ namespace BPSR_ACT_Plugin.Core
                 .Trim();
                 var defaultInterface = Regex.Split(trimmedOption, @"\s+")[3];
 
-                var iface = allDevices.FirstOrDefault(d => d.Addresses.FirstOrDefault(a => a.Address.ToString().Replace(a.Address.Family.ToString(), "").Trim().Equals(defaultInterface)) != null);
+                var iface = allDevices.FirstOrDefault(d => ((LibPcapLiveDevice)d).Addresses.FirstOrDefault(a => a.Addr.ToString().Trim().Equals(defaultInterface)) != null);
                 Debug.WriteLine($"Using network interface: {iface.Description}");
                 return iface;
             }
@@ -133,8 +124,9 @@ namespace BPSR_ACT_Plugin.Core
             tcpCache = new Dictionary<long, byte[]>();
         }
 
-        private void ProcessEthernetPacket(PcapDotNet.Packets.Packet packet)
+        private void ProcessEthernetPacket(object sender, PacketCapture e)
         {
+            var packet = new Packet(e.GetPacket().GetPacket().Bytes, DateTime.Now, DataLink.Ethernet);
             if (DateTime.Now - cleanupLastTime > TimeSpan.FromSeconds(10))
             {
                 CleanUpExpiredFragments();
@@ -225,7 +217,7 @@ namespace BPSR_ACT_Plugin.Core
 
                             }
                         }
-                        catch (Exception e) { throw e; }
+                        catch (Exception ex) { throw ex; }
                         return;
                     }
                     if (tcpNextSeq == -1)
@@ -288,7 +280,7 @@ namespace BPSR_ACT_Plugin.Core
                         }
                     }
                 }
-                catch (Exception e) { throw e; }
+                catch (Exception ex) { throw ex; }
             }
         }
 

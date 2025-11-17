@@ -257,9 +257,9 @@ message CharSerialize {
 	Mod Mod = 57;
 	WorldEventMap WorldEventMap = 58;
 	FishSetting FishSetting = 59;
-	FreightData FreightData = 60;
+	FreightData FreightData = 60;*/
 	ProfessionList ProfessionList = 61;
-	TrialRoad TrialRoad = 62;
+	/*TrialRoad TrialRoad = 62;
 	GashaData GashaData = 63;
 	ShopData ShopData = 64;
 	PersonalWorldBossInfo PersonalWorldBossInfo = 65;
@@ -296,7 +296,6 @@ message CharSerialize {
 	FightPoint FightPoint = 96;
 	SignInfo Sign = 97;
 	CharStatisticsData CharStatisticsData = 98;		*/
-	
 }
 
 message CharBaseInfo {
@@ -341,6 +340,10 @@ message CharBaseInfo {
 	int64 SaveSerial = 41;
 	
 	repeated int32 PersonalState = 24;
+}
+
+message ProfessionList {
+	int32 CurProfessionId = 1;
 }
 
 message FaceData {

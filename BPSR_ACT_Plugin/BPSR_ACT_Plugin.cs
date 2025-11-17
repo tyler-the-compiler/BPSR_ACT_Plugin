@@ -21,7 +21,7 @@ namespace ACT_Plugin
 {
     public class BPSR_ACT_Plugin : UserControl, IActPluginV1
     {
-        PluginMain pluginMain;
+        BPSR_Plugin_Main pluginMain;
         private TextBox ui_logfileParentFolder;
         private Label ui_logfileParentFolder_label;
         Label lblStatus;
@@ -86,7 +86,7 @@ namespace ACT_Plugin
         {
             assemblyResolver.ExceptionOccured += (o, e) => Debug.WriteLine(e.Exception);
             assemblyResolver.AssemblyLoaded += (o, e) => Debug.WriteLine(e.LoadedAssembly.FullName);
-            pluginMain = new PluginMain();
+            pluginMain = new BPSR_Plugin_Main();
             ActGlobals.oFormActMain.Invoke((Action)(() =>
             {
                 try

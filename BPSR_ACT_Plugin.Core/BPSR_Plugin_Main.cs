@@ -22,23 +22,19 @@ using static BPSR_ACT_Plugin.Core.BPSR_Enums;
 
 namespace ACT_Plugin.Core
 {
-    public class PluginMain : IDisposable
+    public class BPSR_Plugin_Main : IDisposable
     {
+        public string LogFileName { get; set; }
         private object locker = new object();
         private TextBox ui_logfileParentFolder;
         TabPage tabPage;
         Label lblStatus;
         string settingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\BPSR_ACT_Plugin.config.xml");
         SettingsSerializer xmlSettings;
-        private int NumLinesRead = 0;
-        private int NumLinesFailedParse = 0;
         private BPSR_Line_Parser bpsrLineParser;
-        private BPSR_Line_Parser bpsrPreviousLine;
         private BPSR_Encounter encounter = new BPSR_Encounter();
-        private Dictionary<string, string> entityCache = new Dictionary<string, string>();
-        private const int
-            DMG = 1,
-            HEALS = 7;
+        private Dictionary<string, BPSR_Line_Parser.Entity> entityCache = new Dictionary<string, BPSR_Line_Parser.Entity>();
+
         private class NPCInstances
         {
             public int nextId;
@@ -49,9 +45,9 @@ namespace ACT_Plugin.Core
         private Dictionary<string, NPCInstances> npcInstances = null;
         private string rootDir;
         string pluginDirectory;
-        public PluginMain()
+        public BPSR_Plugin_Main()
         {
-            
+
         }
 
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
@@ -65,29 +61,25 @@ namespace ACT_Plugin.Core
             ACTSetup(pluginScreenSpace, pluginStatusText);
 
             bpsrLineParser = new BPSR_Line_Parser();
-            bpsrPreviousLine = new BPSR_Line_Parser();
             this.SetupBPSREnvironment();
             var now = DateTime.Now;
-            var logFileName = $"BPSR-Log-{now.Month}{now.Day}{now.Year}-{Guid.NewGuid()}.log";
-            using (File.Create(Path.Combine(rootDir, logFileName))) { }
-            
+            LogFileName = $"BPSR-Log-{now.Month}{now.Day}{now.Year}-{Guid.NewGuid()}.log";
+            using (File.Create(Path.Combine(rootDir, LogFileName))) { }
+            npcInstances = new Dictionary<string, NPCInstances>();
+
             try
             {
                 ActGlobals.oFormActMain.ResetCheckLogs();
             }
             catch { }
-            npcInstances = new Dictionary<string, NPCInstances>();
-            
+
             ActGlobals.oFormActMain.BeforeLogLineRead += new LogLineEventDelegate(ParseLine);
             ActGlobals.oFormActMain.LogFileChanged += new LogFileChangedDelegate(oFormActMain_LogFileChanged);
             ActGlobals.oFormActMain.LogFileParentFolderName = rootDir;
-            ActGlobals.oFormActMain.LogFilePath = Path.Combine(rootDir, logFileName);
+            ActGlobals.oFormActMain.LogFilePath = Path.Combine(rootDir, LogFileName);
             ActGlobals.oFormActMain.OpenLog(false, false);
-            //this.WatchLogFolder();
             lblStatus.Text = "BP:SR ACT Plugin Started";
-            new Thread(new ThreadStart(new BPSR_Packet_Interceptor().Start)).Start();
-
-            
+            new BPSR_Packet_Interceptor().Start();
         }
 
         public void DeInitPlugin()
@@ -105,7 +97,7 @@ namespace ACT_Plugin.Core
             //xmlSettings = new SettingsSerializer(this); // Create a new settings serializer and pass it this instance
             //LoadSettings();
         }
-        
+
         private string GetIntCommas()
         {
             return ActGlobals.mainTableShowCommas ? "#,0" : "0";
@@ -322,38 +314,15 @@ namespace ACT_Plugin.Core
             ActGlobals.oFormActMain.TimeStampLen = 14;
         }
 
-        private string GetDisplayName(CombatantData Data)
+        private BPSR_Line_Parser.Entity? GetEntity(CombatantData Data)
         {
-            string displayName = Data.Name;
-            var split = new string[2];
-            var dName = Data.Name;
 
-            if (displayName.StartsWith("#"))
+            if (entityCache.ContainsKey(Data.Name))
             {
-                displayName = displayName.Substring(1);
+                return entityCache[Data.Name];
             }
 
-            if (displayName.Contains("#"))
-            {
-                split = displayName.Split('#');
-            }
-
-            if (!String.IsNullOrEmpty(split[1]))
-            {
-                if (!entityCache.ContainsKey(split[1]))
-                {
-                    entityCache.Add(split[1], split[0]);
-                }
-                dName = entityCache[split[1]];
-            }
-
-            if (entityCache.ContainsKey(displayName))
-            {
-                dName = entityCache[displayName];
-            }
-
-
-            return dName;
+            return null;
         }
 
         private string EncounterFormatSwitch(EncounterData Data, List<CombatantData> SelectiveAllies, string VarName, string Extra)
@@ -534,55 +503,58 @@ namespace ACT_Plugin.Core
         }
         private string CombatantFormatSwitch(CombatantData Data, string VarName, string Extra)
         {
-            var displayName = GetDisplayName(Data);
+            var combatantEntity = GetEntity(Data);
+            var combatantDisplayName = String.IsNullOrEmpty(combatantEntity?.DisplayName ?? "") ? Data.Name : combatantEntity?.DisplayName;
+            var combatantJob = combatantEntity?.Job ?? "";
+            var combatantAbilityScore = combatantEntity?.AbilityScore ?? "0";
 
             int len = 0;
             switch (VarName)
             {
                 case "name":
-                    return displayName;
+                    return combatantDisplayName;
                 case "NAME":
                     len = Int32.Parse(Extra);
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME3":
                     len = 3;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME4":
                     len = 4;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME5":
                     len = 5;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME6":
                     len = 6;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME7":
                     len = 7;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME8":
                     len = 8;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME9":
                     len = 9;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME10":
                     len = 10;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME11":
                     len = 11;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME12":
                     len = 12;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME13":
                     len = 13;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME14":
                     len = 14;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "NAME15":
                     len = 15;
-                    return displayName.Length - len > 0 ? displayName.Remove(len, displayName.Length - len).Trim() : displayName;
+                    return combatantDisplayName.Length - len > 0 ? combatantDisplayName.Remove(len, combatantDisplayName.Length - len).Trim() : combatantDisplayName;
                 case "DURATION":
                     return Data.Duration.TotalSeconds.ToString("0");
                 case "duration":
@@ -680,21 +652,15 @@ namespace ACT_Plugin.Core
                 case "t":
                     return "\t";
                 case "Job":
-
-
-                    return "Stormblade";
-
+                    return combatantJob.Replace(" ", "");
                 case "fightpoint":
-                    return "1234";
-
+                    return combatantAbilityScore;
                 case "LuckyHitCount":
                     return "0";
-
                 default:
                     return VarName;
             }
         }
-
         private string GetDamageTypeGrouping(DamageTypeData Data)
         {
             string grouping = string.Empty;
@@ -731,37 +697,48 @@ namespace ACT_Plugin.Core
 
             return grouping;
         }
-
         private void ParseLine(bool isImport, LogLineEventArgs log)
         {
             ActGlobals.oFormActMain.GlobalTimeSorter++;
             DateTime time = ActGlobals.oFormActMain.LastKnownTime;
 
-
-            NumLinesRead++;
             String line = log.logLine;
             if (line.StartsWith("}"))
             {
                 line = line.Substring(1);
             }
-            //BPSR_Line_Parser temp = bpsrPreviousLine;
-            //bpsrPreviousLine = bpsrLineParser;
-            //bpsrLineParser = temp;
 
             if (!bpsrLineParser.Parse(line))
             {
                 // PARSE FAILED
                 log.detectedType = Color.Pink.ToArgb();
-                NumLinesFailedParse++;
                 return;
             }
 
-            //SetDisplayName(ref bpsrLineParser.source);
-            //SetDisplayName(ref bpsrLineParser.target);
-            bpsrLineParser.source.DisplayName = bpsrLineParser.source.Name;
-            bpsrLineParser.target.DisplayName = bpsrLineParser.target.Name;
-            //ActGlobals.charName = bpsrLineParser.source.DisplayName;
+            var srcEntity = bpsrLineParser.source;
+            var targetEntity = bpsrLineParser.target;
 
+            if (!entityCache.ContainsKey(srcEntity.Name))
+            {
+                entityCache.Add(srcEntity.Name, srcEntity);
+            }
+            else
+            {
+                srcEntity.AbilityScore = ((!String.IsNullOrEmpty(srcEntity.AbilityScore)) && srcEntity.AbilityScore != "-1") ? srcEntity.AbilityScore : entityCache[srcEntity.Name].AbilityScore;
+                srcEntity.Job = ((!String.IsNullOrEmpty(srcEntity.Job)) && srcEntity.Job != "???") ? srcEntity.Job : entityCache[srcEntity.Name].Job;
+                entityCache[srcEntity.Name] = srcEntity;
+            }
+
+            if (!entityCache.ContainsKey(targetEntity.Name))
+            {
+                entityCache.Add(targetEntity.Name, targetEntity);
+            }
+            else
+            {
+                targetEntity.AbilityScore = ((!String.IsNullOrEmpty(targetEntity.AbilityScore)) && targetEntity.AbilityScore != "-1") ? targetEntity.AbilityScore : entityCache[targetEntity.Name].AbilityScore;
+                targetEntity.Job = ((!String.IsNullOrEmpty(targetEntity.Job)) && targetEntity.Job != "???") ? targetEntity.Job : entityCache[targetEntity.Name].Job;
+                entityCache[targetEntity.Name] = targetEntity;
+            }
 
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_PLAYER_DIE.ToString())
             {
@@ -773,21 +750,21 @@ namespace ACT_Plugin.Core
                     return;
                 }
 
-                if (!ActGlobals.oFormActMain.SetEncounter(time, bpsrLineParser.source.Name, bpsrLineParser.target.Name))
+                if (!ActGlobals.oFormActMain.SetEncounter(time, srcEntity.Name, targetEntity.Name))
                 {
                     return;
                 }
 
                 var mSwing = new MasterSwing(
-                    DMG,
+                    (int)SwingTypeEnum.Melee,
                     bpsrLineParser.action1.modifier?.Contains("Crit") ?? false,
                     Dnum.Death,
                     DateTime.Now,
                     ActGlobals.oFormActMain.GlobalTimeSorter,
                     bpsrLineParser.action1.name,
-                    bpsrLineParser.source.Name,
+                    srcEntity.Name,
                     bpsrLineParser.action1.element,
-                    bpsrLineParser.target.Name
+                    targetEntity.Name
                 );
                 ActGlobals.oFormActMain.AddCombatAction(mSwing);
             }
@@ -811,7 +788,7 @@ namespace ACT_Plugin.Core
             }
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_DAMAGE.ToString())
             {
-                log.detectedType = (bpsrLineParser.source.Name == ActGlobals.charName) ?
+                log.detectedType = (srcEntity.DisplayName == ActGlobals.charName) ?
                         Color.DarkRed.ToArgb() :
                         Color.Red.ToArgb();
                 ParseDamage(false, time);
@@ -827,6 +804,10 @@ namespace ACT_Plugin.Core
         }
         public void ParseDamage(bool isImport, DateTime time)
         {
+            var action = bpsrLineParser.action1;
+            var srcEntity = bpsrLineParser.source;
+            var targetEntity = bpsrLineParser.target;
+
             encounter.CombatEvent(bpsrLineParser, isImport, time);
 
             if (!ActGlobals.oFormActMain.InCombat)
@@ -844,20 +825,24 @@ namespace ACT_Plugin.Core
             dnum = new Dnum(bpsrLineParser.action1.dmgValue);
 
             var mSwing = new MasterSwing(
-                DMG,
+                (int)SwingTypeEnum.Melee,
                 bpsrLineParser.action1.modifier?.Contains("Crit") ?? false,
                 dnum,
                 DateTime.Now,
                 ActGlobals.oFormActMain.GlobalTimeSorter,
-                bpsrLineParser.action1.name,
-                bpsrLineParser.source.Name,
-                bpsrLineParser.action1.element,
-                bpsrLineParser.target.Name
+                action.name,
+                srcEntity.Name,
+                action.element,
+                targetEntity.Name
             );
             ActGlobals.oFormActMain.AddCombatAction(mSwing);
         }
         public void ParseHealing(bool isImport, DateTime time)
         {
+            var action = bpsrLineParser.action1;
+            var srcEntity = bpsrLineParser.source;
+            var targetEntity = bpsrLineParser.target;
+
             encounter.CombatEvent(bpsrLineParser, isImport, time);
 
             if (!ActGlobals.oFormActMain.InCombat)
@@ -874,61 +859,23 @@ namespace ACT_Plugin.Core
             dnum = new Dnum(bpsrLineParser.action1.dmgValue);
 
             var mSwing = new MasterSwing(
-                HEALS,
+                (int)SwingTypeEnum.Healing,
                 bpsrLineParser.action1.modifier?.Contains("Crit") ?? false,
                 dnum,
                 DateTime.Now,
                 ActGlobals.oFormActMain.GlobalTimeSorter,
-                bpsrLineParser.action1.name,
-                bpsrLineParser.source.Name,
-                bpsrLineParser.action1.element,
-                bpsrLineParser.target.Name
+                action.name,
+                srcEntity.Name,
+                action.element,
+                targetEntity.Name
             );
             ActGlobals.oFormActMain.AddCombatAction(mSwing);
         }
         void oFormActMain_LogFileChanged(bool IsImport, string NewLogFileName)
         {
             bpsrLineParser.Reset();
-            bpsrPreviousLine.Reset();
             npcInstances.Clear();
             return;
-        }
-
-        private void WatchLogFolder()
-        {
-            var fsWatcher = new FileSystemWatcher
-            {
-                Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "bpsr_pso\\app-2.0.1\\logs\\"),
-                EnableRaisingEvents = true,
-                IncludeSubdirectories = true
-            };
-
-            fsWatcher.Created += new FileSystemEventHandler(HandleFSChange);
-            //fsWatcher.Changed += new FileSystemEventHandler(HandleFSChange);
-        }
-        private void HandleFSChange(object sender, FileSystemEventArgs e)
-        {
-            string logFullPath = Path.Combine(e.FullPath, "fight.log");
-            string jsonFullpath = Path.Combine(e.FullPath, "allUserData.json");
-
-            do
-            {
-                if (File.Exists(logFullPath))
-                {
-                    ActGlobals.oFormActMain.LogFilePath = logFullPath;
-                    ActGlobals.oFormActMain.OpenLog(false, false);
-                    break;
-                }
-            } while (!File.Exists(logFullPath));
-            //do
-            //{
-            //    if (File.Exists(jsonFullpath))
-            //    {
-
-            //        allPlayersJSONFile = JObject.Parse(File.ReadAllText(jsonFullpath));
-            //        break;
-            //    }
-            //} while (!File.Exists(jsonFullpath));
         }
         void LoadSettings()
         {
@@ -983,17 +930,17 @@ namespace ACT_Plugin.Core
             throw new NotImplementedException();
         }
     }
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
 }

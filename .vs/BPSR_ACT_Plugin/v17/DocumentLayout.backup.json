@@ -3,32 +3,28 @@
   "WorkspaceRootPath": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{00000000-0000-0000-0000-000000000000}|\u003CSolution\u003E|BPSR_ACT_Plugin||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|c:\\users\\tyler\\proj\\bpsr_act_plugin\\bpsr_act_plugin.core\\bpsr_plugin_main.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\bpsr_plugin_main.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{00000000-0000-0000-0000-000000000000}|\u003CSolution\u003E|BPSR_ACT_Plugin.Core||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\bpsr_act_plugin.core\\bpsr_packet_processor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\bpsr_packet_processor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1749AF3B-F485-4EA5-9F25-6C8805501A02}|BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj|c:\\users\\tyler\\proj\\bpsr_act_plugin\\bpsr_act_plugin\\assemblyresolver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1749AF3B-F485-4EA5-9F25-6C8805501A02}|BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj|solutionrelative:bpsr_act_plugin\\assemblyresolver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\bpsr_act_plugin.core\\bpsr_line_parser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\bpsr_line_parser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\bpsr_act_plugin.core\\bpsr_packet_interceptor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\bpsr_packet_interceptor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|c:\\users\\tyler\\proj\\bpsr_act_plugin\\bpsr_act_plugin.core\\blueprotobuf.proto||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\blueprotobuf.proto||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1749AF3B-F485-4EA5-9F25-6C8805501A02}|BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj|C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\bpsr_act_plugin\\bpsr_act_plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1749AF3B-F485-4EA5-9F25-6C8805501A02}|BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj|solutionrelative:bpsr_act_plugin\\bpsr_act_plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\bpsr_act_plugin.core\\bpsr_event_logger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\bpsr_event_logger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\bpsr_act_plugin.core\\pluginmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\pluginmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1749AF3B-F485-4EA5-9F25-6C8805501A02}|BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj|c:\\users\\tyler\\proj\\bpsr_act_plugin\\bpsr_act_plugin\\||{B270807C-D8C6-49EB-8EBE-8E8D566637A1}|a54ad834-9219-4aa6-b589-607af21c3e26"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|c:\\users\\tyler\\proj\\bpsr_act_plugin\\bpsr_act_plugin.core\\||{B270807C-D8C6-49EB-8EBE-8E8D566637A1}|a54ad834-9219-4aa6-b589-607af21c3e26"
+      "AbsoluteMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|c:\\users\\tyler\\proj\\bpsr_act_plugin\\bpsr_act_plugin.core\\bpsr_enums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95852CE3-3CB6-40DE-853E-CE4A809AB8BB}|BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj|solutionrelative:bpsr_act_plugin.core\\bpsr_enums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,81 +34,87 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "BPSR_ACT_Plugin.Core",
-              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj",
-              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj",
-              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj",
-              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_ACT_Plugin.Core.csproj",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-11-16T07:50:09.272Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "BPSR_ACT_Plugin",
-              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj",
-              "RelativeDocumentMoniker": "BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj",
-              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj",
-              "RelativeToolTip": "BPSR_ACT_Plugin\\BPSR_ACT_Plugin.csproj",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-11-16T07:49:51.515Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "AssemblyResolver.cs",
-              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin\\AssemblyResolver.cs",
-              "RelativeDocumentMoniker": "BPSR_ACT_Plugin\\AssemblyResolver.cs",
-              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin\\AssemblyResolver.cs",
-              "RelativeToolTip": "BPSR_ACT_Plugin\\AssemblyResolver.cs",
-              "ViewState": "AgIAADcAAAAAAAAAAAAcwFUAAAAXAAAAAAAAAA==",
+              "Title": "BPSR_Line_Parser.cs",
+              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Line_Parser.cs",
+              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_Line_Parser.cs",
+              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Line_Parser.cs",
+              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_Line_Parser.cs",
+              "ViewState": "AgIAAPIAAAAAAAAAAAAqwAUBAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-16T07:04:06.336Z",
+              "WhenOpened": "2025-11-16T23:39:24.686Z",
+              "IsPinned": true,
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "BPSR_ACT_Plugin.cs",
-              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.cs",
-              "RelativeDocumentMoniker": "BPSR_ACT_Plugin\\BPSR_ACT_Plugin.cs",
-              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.cs",
-              "RelativeToolTip": "BPSR_ACT_Plugin\\BPSR_ACT_Plugin.cs",
-              "ViewState": "AgIAAE0AAAAAAAAAAAAewGEAAAAQAAAAAAAAAA==",
+              "Title": "BPSR_Event_Logger.cs",
+              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Event_Logger.cs",
+              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_Event_Logger.cs",
+              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Event_Logger.cs",
+              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_Event_Logger.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAIwBQAAABEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-16T06:44:40.414Z",
+              "WhenOpened": "2025-11-16T22:58:09.037Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BlueProtobuf.proto",
+              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BlueProtobuf.proto",
+              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BlueProtobuf.proto",
+              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BlueProtobuf.proto",
+              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BlueProtobuf.proto",
+              "ViewState": "AgIAALUAAAAAAAAAAAAnwMkAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003853|",
+              "WhenOpened": "2025-11-17T13:58:46.116Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "PluginMain.cs",
-              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\PluginMain.cs",
-              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\PluginMain.cs",
-              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\PluginMain.cs",
-              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\PluginMain.cs",
-              "ViewState": "AgIAAFAAAAAAAAAAAAAewFcAAAAMAAAAAAAAAA==",
+              "Title": "BPSR_Enums.cs",
+              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Enums.cs",
+              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_Enums.cs",
+              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Enums.cs",
+              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_Enums.cs",
+              "ViewState": "AgIAADsAAAAAAAAAAAAwwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-16T06:30:15.42Z"
+              "WhenOpened": "2025-11-17T13:27:55.924Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "BPSR_Packet_Interceptor.cs",
-              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Packet_Interceptor.cs",
-              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_Packet_Interceptor.cs",
-              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Packet_Interceptor.cs",
-              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_Packet_Interceptor.cs",
-              "ViewState": "AgIAADgAAAAAAAAAAAAAwEMAAAAJAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "BPSR_Plugin_Main.cs",
+              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Plugin_Main.cs",
+              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_Plugin_Main.cs",
+              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Plugin_Main.cs",
+              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_Plugin_Main.cs",
+              "ViewState": "AgIAAH4CAAAAAAAAAAAAwI4CAAA4AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-16T06:20:02.521Z"
+              "WhenOpened": "2025-11-16T23:34:29.355Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BPSR_Packet_Processor.cs",
+              "DocumentMoniker": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Packet_Processor.cs",
+              "RelativeDocumentMoniker": "BPSR_ACT_Plugin.Core\\BPSR_Packet_Processor.cs",
+              "ToolTip": "C:\\Users\\tyler\\proj\\BPSR_ACT_Plugin\\BPSR_ACT_Plugin.Core\\BPSR_Packet_Processor.cs",
+              "RelativeToolTip": "BPSR_ACT_Plugin.Core\\BPSR_Packet_Processor.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAIwDECAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-16T22:55:16.157Z",
+              "EditorCaption": ""
             }
           ]
         }
