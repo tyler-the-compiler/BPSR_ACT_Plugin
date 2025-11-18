@@ -294,8 +294,8 @@ namespace BPSR_ACT_Plugin.Core
                 var isTargetSelf = lineFields[11] == "True";
 
                 var spIdSuccess = int.TryParse(lineFields[12], out int sourceProfessionId);
-                var sFpSuccess = int.TryParse(lineFields[13], out int sourceFightPoint);
-                var tpIdSuccess = int.TryParse(lineFields[14], out int targetProfessionId);
+                var tpIdSuccess = int.TryParse(lineFields[13], out int targetProfessionId);
+                var sFpSuccess = int.TryParse(lineFields[14], out int sourceFightPoint);
                 var tFpSuccess = int.TryParse(lineFields[15], out int targetFightPoint);
 
                 source.DisplayName = sName;
@@ -368,8 +368,8 @@ namespace BPSR_ACT_Plugin.Core
                 var isAttackerSelf = lineFields[9] == "True";
                 var isTargetSelf = lineFields[10] == "True";
                 var spIdSuccess = int.TryParse(lineFields[11], out int sourceProfessionId);
-                var sFpSuccess = int.TryParse(lineFields[12], out int sourceFightPoint);
-                var tpIdSuccess = int.TryParse(lineFields[13], out int targetProfessionId);
+                var tpIdSuccess = int.TryParse(lineFields[12], out int targetProfessionId);
+                var sFpSuccess = int.TryParse(lineFields[13], out int sourceFightPoint);
                 var tFpSuccess = int.TryParse(lineFields[14], out int targetFightPoint);
 
                 if (isAttackerSelf)

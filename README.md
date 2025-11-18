@@ -1,13 +1,16 @@
 An ACT plugin for Blue Protocol: Star Resonance
 
 utilizes and adapts code from
+
 - SWTOR Parsing plugin: https://advancedcombattracker.com/download.php
 - TSW Parsing plugin: https://advancedcombattracker.com/download.php
 - BPSR-PSO: https://github.com/Chase-Simmons/BPSR-PSO
 - StarResonanceDamageCounter: https://github.com/dmlgzs/StarResonanceDamageCounter
 - OverlayPlugin: https://github.com/OverlayPlugin/OverlayPlugin
+- BlueMeter: https://github.com/caaatto/BlueMeter
 
 Install Instructions:
+
 - Requires ACT: https://advancedcombattracker.com/download.php
 
 - Copy the entire folder into your ACT plugins folder (usually appdata/roaming/Advanced Combat Tracker/Plugins)
@@ -19,6 +22,7 @@ Install Instructions:
 - Start fighting something and you should begin to see data populate on the "Main" tab in ACT
 
 Additionally install OverlayPlugin to have an on-screen DPS meter - I have ported the popular Kagerou Overlay from FFXIV to BP:SR
+
 - Go back to the "Plugins" tab
 - Click "Get Plugins..."
 - Select "OverlayPlugin"
@@ -31,7 +35,7 @@ Additionally install OverlayPlugin to have an on-screen DPS meter - I have porte
 - That's it!
 
 Currently Known Issues:
+
 - Install folder can be slimmed down
 - There is occasionally a thread-unsafe operation happening somewhere that will cause ACT to crash. Still working on it
 - Ability Score and Profession are hardcoded, these will be updated to reflect actual values soon(TM)
-

@@ -136,6 +136,7 @@
   <ItemGroup>
     <Compile Include="BlueProtobuf.cs" />
     <Compile Include="BoyerMoore.cs" />
+    <Compile Include="BPSR_Packet_InterceptorV2.cs" />
     <Compile Include="BPSR_Plugin_Main.cs" />
     <Compile Include="BPSR_Encounter.cs" />
     <Compile Include="BPSR_Enums.cs" />

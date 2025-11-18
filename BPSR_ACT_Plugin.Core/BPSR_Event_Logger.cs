@@ -32,7 +32,7 @@ namespace BPSR_ACT_Plugin.Core
         private Queue<Func<Task>> taskQueue;
         private bool isProcessingTask = false;
 
-        public BPSR_Event_Logger()
+        private BPSR_Event_Logger()
         {
             taskQueue = new Queue<Func<Task>>();
             var directoryObject = new DirectoryInfo(rootDir);

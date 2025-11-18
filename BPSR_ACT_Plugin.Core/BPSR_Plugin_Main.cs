@@ -79,7 +79,7 @@ namespace ACT_Plugin.Core
             ActGlobals.oFormActMain.LogFilePath = Path.Combine(rootDir, LogFileName);
             ActGlobals.oFormActMain.OpenLog(false, false);
             lblStatus.Text = "BP:SR ACT Plugin Started";
-            new BPSR_Packet_Interceptor().Start();
+            BPSR_Packet_InterceptorV2.Instance.Start();
         }
 
         public void DeInitPlugin()
@@ -492,7 +492,7 @@ namespace ACT_Plugin.Core
                     return kills.ToString();
                 case "deaths":
                     foreach (CombatantData cd in SelectiveAllies)
-                        deaths += cd.Deaths;
+                        deaths = cd.Deaths;
                     return deaths.ToString();
                 case "title":
                     return $"{Data.ZoneName} - {this.GetBossName(Data.Title)}";
