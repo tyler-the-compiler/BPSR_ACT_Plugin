@@ -495,7 +495,7 @@ namespace ACT_Plugin.Core
                         deaths += cd.Deaths;
                     return deaths.ToString();
                 case "title":
-                    return $"{Data.ZoneName} - {Data.Title}";
+                    return $"{Data.ZoneName} - {this.GetBossName(Data.Title)}";
 
                 default:
                     return VarName;
@@ -560,9 +560,9 @@ namespace ACT_Plugin.Core
                 case "duration":
                     return Data.DurationS;
                 case "maxhit":
-                    return Data.GetMaxHit(true);
+                    return Data.GetMaxHit(true, false);
                 case "MAXHIT":
-                    return Data.GetMaxHit(false);
+                    return Data.GetMaxHit(false, false);
                 case "maxheal":
                     return Data.GetMaxHeal(true, false);
                 case "MAXHEAL":
@@ -770,7 +770,7 @@ namespace ACT_Plugin.Core
             }
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_ZONE_LOAD.ToString())
             {
-                if (ActGlobals.oFormActMain.InCombat)
+                if (ActGlobals.oFormActMain.InCombat && bpsrLineParser.action1.modifier != "DirtySync") //don't exit combat when using dirtysync to load zone name later on
                 {
                     encounter.ExitCombat(bpsrLineParser, false, time);
                 }
@@ -924,7 +924,24 @@ namespace ACT_Plugin.Core
             xWriter.Flush();    // Flush the file buffer to disk
             xWriter.Close();
         }
-
+        private string GetBossName(string uidTag)
+        {
+            if (uidTag == "Encounter") { return uidTag; }
+            this.entityCache.TryGetValue(uidTag, out BPSR_Line_Parser.Entity bossEntity);
+            var enemyName = bossEntity.DisplayName;
+            if (!String.IsNullOrEmpty(enemyName))
+            {
+                return enemyName;
+            }
+            long.TryParse(uidTag.Replace("#", ""), out long uid);
+            var enemyUuid = uid << 16;
+            MonsterMap.TryGetValue(enemyUuid, out enemyName);
+            if (!String.IsNullOrEmpty(enemyName))
+            {
+                return enemyName;
+            }
+            return uidTag;
+        }
         public void Dispose()
         {
             throw new NotImplementedException();

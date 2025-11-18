@@ -25,7 +25,6 @@ namespace BPSR_ACT_Plugin.Core
 
         public Dictionary<long, Dictionary<string, string>> PlayerCache;
         public Dictionary<long, Dictionary<string, string>> EnemyCache;
-        private BPSR_Event_Logger eventLogger;
         private bool inCombat;
         private long currentLevelId;
         public BPSR_Packet_Processor()
@@ -34,7 +33,6 @@ namespace BPSR_ACT_Plugin.Core
             decompressor = new Decompressor();
             PlayerCache = new Dictionary<long, Dictionary<string, string>>();
             EnemyCache = new Dictionary<long, Dictionary<string, string>>();
-            eventLogger = new BPSR_Event_Logger();
             currentLevelId = 0;
         }
 
@@ -211,17 +209,17 @@ namespace BPSR_ACT_Plugin.Core
                         var sourcePlayerProfession = this.GetPlayerAttribute(attackerUid, "profession") ?? "-1";
                         var sourcePlayerFightPoint = this.GetPlayerAttribute(attackerUid, "fight_point") ?? "-1";
 
-                        eventLogger.AddHealingLogLine(actionSource, actionTarget, skillId, damageElement, damage, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, targetPlayerProfession, sourcePlayerFightPoint, targetPlayerFightPoint);
+                        BPSR_Event_Logger.Instance.AddHealingLogLine(actionSource, actionTarget, skillId, damageElement, damage, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, targetPlayerProfession, sourcePlayerFightPoint, targetPlayerFightPoint);
                     }
                     else if (!isDead) //enemy attacks player
                     {
-                        var enemyName = this.GetEnemyAttribute(attackerUid, "name");
-                        var actionSource = $"{enemyName ?? ""}#{attackerUid}";
-                        eventLogger.AddDamageLogLine(actionSource, actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
+                        var actionSource = this.GetEnemyFullName(attackerUid);
+                        BPSR_Event_Logger.Instance.AddDamageLogLine(actionSource, actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
                     }
                     else if (isDead && PlayerCache.ContainsKey(targetUid) && PlayerCache[targetUid].ContainsKey("dead") && PlayerCache[targetUid]["dead"] == "no") //enemy attacks player and player dies
                     {
-                        eventLogger.AddDeathLogLine(attackerUid.ToString(), actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
+                        var actionSource = this.GetEnemyFullName(attackerUid);
+                        BPSR_Event_Logger.Instance.AddDeathLogLine(actionSource, actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
                         SetPlayerAttribute(targetUid, "hp", 0);
                     }
 
@@ -239,10 +237,9 @@ namespace BPSR_ACT_Plugin.Core
                             var sourcePlayerProfession = this.GetPlayerAttribute(attackerUid, "profession") ?? "-1";
                             var sourcePlayerFightPoint = this.GetPlayerAttribute(attackerUid, "fight_point") ?? "-1";
 
-                            var enemyName = this.GetEnemyAttribute(targetUid, "name");
-                            var attackTarget = $"{enemyName ?? ""}#{targetUid}";
+                            var attackTarget = this.GetEnemyFullName(targetUid);
 
-                            eventLogger.AddDamageLogLine(attackSource, attackTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, "_", sourcePlayerFightPoint, "_");
+                            BPSR_Event_Logger.Instance.AddDamageLogLine(attackSource, attackTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, "_", sourcePlayerFightPoint, "_");
                         }
 
                         //SetPlayerAttribute(attackerUid, "dead", isDead ? "yes" : "no");
@@ -253,7 +250,6 @@ namespace BPSR_ACT_Plugin.Core
 
         private void ProcessSyncNearEntities(byte[] payloadBuffer)
         {
-
             var syncNearEntities = SyncNearEntities.Parser.ParseFrom(payloadBuffer);
 
             if (syncNearEntities.Appear.Count == 0)
@@ -292,7 +288,7 @@ namespace BPSR_ACT_Plugin.Core
                 {
                     //var currentAreaId = sceneData.LevelAreaId;
                     currentLevelId = sceneData.LevelMapId;
-                    eventLogger.AddZoneChangeLogLine(currentLevelId);
+                    BPSR_Event_Logger.Instance.AddZoneChangeLogLine(currentLevelId);
                 }
             }
             else { return; }
@@ -365,6 +361,25 @@ namespace BPSR_ACT_Plugin.Core
                                     if (fightPoint != 0)
                                     {
                                         SetPlayerAttribute(playerUid, "fight_point", fightPoint);
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        case 3:
+                            if (!DoesStreamHaveIdentifier(reader)) { break; }
+                            fieldId = reader.ReadUInt32();
+                            _ = reader.ReadInt32();
+                            switch(fieldId)
+                            {
+                                case 6:
+                                    var levelMapId = reader.ReadUInt32();
+                                    _ = reader.ReadInt32();
+                                    if (currentLevelId != levelMapId)
+                                    {
+                                        currentLevelId = levelMapId;
+                                        BPSR_Event_Logger.Instance.AddZoneChangeLogLine(currentLevelId, true);
                                     }
                                     break;
                                 default:
@@ -620,6 +635,17 @@ namespace BPSR_ACT_Plugin.Core
             }
 
             return EnemyCache[uid][key];
+        }
+
+        private string GetEnemyFullName(long uid)
+        {
+            var enemyName = this.GetEnemyAttribute(uid, "name");
+            if (!String.IsNullOrEmpty(enemyName)) {
+                return $"{enemyName ?? ""}#{uid}";
+            }
+            var enemyUuid = uid << 16;
+            MonsterMap.TryGetValue(enemyUuid, out enemyName);
+            return $"{enemyName ?? ""}#{uid}";
         }
 
         private string GetDamageElement(EDamageProperty damagePropery)

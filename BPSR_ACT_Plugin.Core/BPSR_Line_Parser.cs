@@ -426,12 +426,12 @@ namespace BPSR_ACT_Plugin.Core
             {
                 long zoneKey;
                 var success = long.TryParse(lineFields[2], out zoneKey);
-
+                var isDirtySync = lineFields[3] == "True";
                 if (!success) { return false; }
                 var zn = LocationMap.ContainsKey(zoneKey) ? LocationMap[zoneKey] : $"Unknown Location ID {zoneKey}";
                 action1.type = lineFields[1];
                 action1.name = zn;
-
+                action1.modifier = isDirtySync ? "DirtySync" : "None";
                 return true;
             }
 

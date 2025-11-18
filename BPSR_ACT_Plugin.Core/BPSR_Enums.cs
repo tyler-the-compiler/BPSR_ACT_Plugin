@@ -20,11 +20,11 @@ namespace BPSR_ACT_Plugin.Core
             {6009, "Goblin Lair (Master 1)" },
             {1331, "Dark Mist Fortress (Normal)" }
         };
-        public static Dictionary<int, string> MonsterMap = new Dictionary<int, string>
+        public static Dictionary<long, string> MonsterMap = new Dictionary<long, string>
         {
             {10007, "Storm Goblin King" },
             {10010, "Tempest Ogre" },
-            {103588, "Denvel" }
+            {6788743168, "Denvel" }
         };
         public enum LogEventIds
         {

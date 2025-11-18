@@ -11,11 +11,30 @@ namespace BPSR_ACT_Plugin.Core
 {
     class BPSR_Event_Logger
     {
+        public static BPSR_Event_Logger Instance
+        {
+            get
+            {
+                lock (padlock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new BPSR_Event_Logger();
+                    }
+                    return instance;
+                }
+            }
+        }
+        private static BPSR_Event_Logger instance = null;
+        private static readonly object padlock = new object();
         private string rootDir = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, @"BPSRLogs");
         private string logFileName;
+        private Queue<Func<Task>> taskQueue;
+        private bool isProcessingTask = false;
 
         public BPSR_Event_Logger()
         {
+            taskQueue = new Queue<Func<Task>>();
             var directoryObject = new DirectoryInfo(rootDir);
             var mostRecentFile = (from f in directoryObject.GetFiles()
                                   orderby f.LastWriteTime descending
@@ -25,7 +44,13 @@ namespace BPSR_ACT_Plugin.Core
 
         public void AddZoneChangeLogLine(long currentLevelId)
         {
-            var line = $"{LogEventIds.EVENT_ZONE_LOAD}|{currentLevelId}";
+            var line = $"{LogEventIds.EVENT_ZONE_LOAD}|{currentLevelId}|False";
+            AddLogLine(line);
+        }
+
+        public void AddZoneChangeLogLine(long currentLevelId, bool isDirtySync)
+        {
+            var line = $"{LogEventIds.EVENT_ZONE_LOAD}|{currentLevelId}|{isDirtySync}";
             AddLogLine(line);
         }
 
@@ -49,10 +74,45 @@ namespace BPSR_ACT_Plugin.Core
 
         private void AddLogLine(string line)
         {
-            line = $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}|{line}";
+            var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            EnqueueTask(async () => await Task.Run(() => File.AppendAllText(logFileName, $"{timestamp}|{line}" + "\n")));
+        }
 
-            File.AppendAllText(logFileName, line + "\n");
+        private void EnqueueTask(Func<Task> task)
+        {
+            lock (padlock)
+            {
+                taskQueue.Enqueue(task);
+                if (!isProcessingTask)
+                {
+                    isProcessingTask = true;
+                    Task.Run(ExecuteTasks);
+                }
+            }
+        }
 
+        private async Task ExecuteTasks()
+        {
+            while (true)
+            {
+                Func<Task> nextTask = null;
+                lock (padlock)
+                {
+                    if (taskQueue.Count > 0)
+                    {
+                        nextTask = taskQueue.Dequeue();
+                    }
+                    else
+                    {
+                        isProcessingTask = false;
+                        break;
+                    }
+                }
+                if (nextTask != null)
+                {
+                    await nextTask();
+                }
+            }
         }
     }
 }
