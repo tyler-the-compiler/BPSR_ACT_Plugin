@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using static BPSR_ACT_Plugin.Core.BPSR_Enums;
+using static BPSR_ACT_Plugin.Core.BPSR_Enums_Constants;
 using ZstdSharp;
 using System.Text;
 
@@ -21,16 +21,19 @@ namespace BPSR_ACT_Plugin.Core
 
         public long currentUserUuid = 0;
         public long CurrentUserUID { get; set; }
-        private Decompressor decompressor;
+        //private Decompressor decompressor;
 
         public Dictionary<long, Dictionary<string, string>> PlayerCache;
         public Dictionary<long, Dictionary<string, string>> EnemyCache;
         private bool inCombat;
         private long currentLevelId;
+        private static readonly uint ZSTD_MAGIC = 0xFD2FB528;
+        private static readonly uint SKIPPABLE_MAGIC_MIN = 0x184D2A50;
+        private static readonly uint SKIPPABLE_MAGIC_MAX = 0x184D2A5F;
         public BPSR_Packet_Processor()
         {
             inCombat = false;
-            decompressor = new Decompressor();
+            //decompressor = new Decompressor();
             PlayerCache = new Dictionary<long, Dictionary<string, string>>();
             EnemyCache = new Dictionary<long, Dictionary<string, string>>();
             currentLevelId = 0;
@@ -82,7 +85,7 @@ namespace BPSR_ACT_Plugin.Core
                                     var nestedPacket = packetReader.ReadBytes((int)(packetReader.BaseStream.Length - packetReader.BaseStream.Position));
                                     if (isZstdCompressed)
                                     {
-                                        nestedPacket = DecompressPayload(nestedPacket);
+                                        nestedPacket = DecompressPayloadV2(nestedPacket);
                                     }
                                     ProcessPacket(nestedPacket);
                                     break;
@@ -115,8 +118,7 @@ namespace BPSR_ACT_Plugin.Core
             var msgPayload = packetReader.ReadBytes((int)(packetReader.BaseStream.Length - packetReader.BaseStream.Position));
             if (isZstdCompressed)
             {
-                msgPayload = DecompressPayload(msgPayload);
-                return;
+                msgPayload = DecompressPayloadV2(msgPayload);
             }
             switch ((NotifyMethod)methodId)
             {
@@ -213,12 +215,12 @@ namespace BPSR_ACT_Plugin.Core
                     }
                     else if (!isDead) //enemy attacks player
                     {
-                        var actionSource = this.GetEnemyFullName(attackerUid);
+                        var actionSource = (!isAttackerPlayer) ? this.GetEnemyFullName(attackerUid) : $"#{attackerUid}"; //we damage ourselves
                         BPSR_Event_Logger.Instance.AddDamageLogLine(actionSource, actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
                     }
                     else if (isDead && PlayerCache.ContainsKey(targetUid) && PlayerCache[targetUid].ContainsKey("dead") && PlayerCache[targetUid]["dead"] == "no") //enemy attacks player and player dies
                     {
-                        var actionSource = this.GetEnemyFullName(attackerUid);
+                        var actionSource = (!isAttackerPlayer) ? this.GetEnemyFullName(attackerUid) : $"#{attackerUid}"; //we damage ourselves
                         BPSR_Event_Logger.Instance.AddDeathLogLine(actionSource, actionTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, "_", targetPlayerProfession, "_", targetPlayerFightPoint);
                         SetPlayerAttribute(targetUid, "hp", 0);
                     }
@@ -237,7 +239,8 @@ namespace BPSR_ACT_Plugin.Core
                             var sourcePlayerProfession = this.GetPlayerAttribute(attackerUid, "profession") ?? "-1";
                             var sourcePlayerFightPoint = this.GetPlayerAttribute(attackerUid, "fight_point") ?? "-1";
 
-                            var attackTarget = this.GetEnemyFullName(targetUid);
+
+                            var attackTarget = (!isTargetPlayer) ? this.GetEnemyFullName(targetUid) : $"#{targetUid}"; //we damage ourselves
 
                             BPSR_Event_Logger.Instance.AddDamageLogLine(attackSource, attackTarget, skillId, damageElement, damage, hpLessenValue, isCrit, isLucky, isAttackerCurrentUser, isTargetCurrentUser, sourcePlayerProfession, "_", sourcePlayerFightPoint, "_");
                         }
@@ -324,13 +327,6 @@ namespace BPSR_ACT_Plugin.Core
             //uhh I think this means that when there is a userfightattr, we are in combat and when there isn't, we are not?
             //and the sequence we are looking for in here is [16, 0, 0, 0], which equates to tag 16 in the protobuf data, which is
             //the userfight attr within vdata
-            var fightDataSequenceExists = !new BoyerMoore(new byte[] { 16, 0, 0, 0 }).Search(syncContainerDirtyData.VData.Buffer.ToByteArray()).IsNullOrEmpty();
-
-            if (!fightDataSequenceExists && inCombat)
-            {
-                inCombat = false;
-                //add eventlogger out of combat log line
-            }
 
             try
             {
@@ -341,13 +337,15 @@ namespace BPSR_ACT_Plugin.Core
                     var fieldId = reader.ReadUInt32();
                     _ = reader.ReadUInt32();
                     var playerUid = CurrentUserUID;
-                    switch (fieldId) {
+                    switch (fieldId)
+                    {
 
                         case 2:
                             if (!DoesStreamHaveIdentifier(reader)) { break; }
                             fieldId = reader.ReadUInt32();
                             _ = reader.ReadInt32();
-                            switch (fieldId) {
+                            switch (fieldId)
+                            {
                                 case 5:
                                     var playerName = StreamReadString(reader);
                                     if (!string.IsNullOrEmpty(playerName))
@@ -371,7 +369,7 @@ namespace BPSR_ACT_Plugin.Core
                             if (!DoesStreamHaveIdentifier(reader)) { break; }
                             fieldId = reader.ReadUInt32();
                             _ = reader.ReadInt32();
-                            switch(fieldId)
+                            switch (fieldId)
                             {
                                 case 6:
                                     var levelMapId = reader.ReadUInt32();
@@ -383,6 +381,34 @@ namespace BPSR_ACT_Plugin.Core
                                     }
                                     break;
                                 default:
+                                    break;
+                            }
+                            break;
+                        case 6:
+                            if (!DoesStreamHaveIdentifier(reader)) { break; }
+                            fieldId = reader.ReadUInt32();
+                            _ = reader.ReadInt32();
+                            switch (fieldId)
+                            {
+                                case 2:
+                                    if (!DoesStreamHaveIdentifier(reader)) { break; }
+                                    fieldId = reader.ReadUInt32();
+                                    _ = reader.ReadInt32();
+                                    switch (fieldId)
+                                    {
+                                        case 2:
+                                            if (!DoesStreamHaveIdentifier(reader)) { break; }
+                                            fieldId = reader.ReadUInt32();
+                                            _ = reader.ReadInt32();
+                                            switch (fieldId)
+                                            {
+                                                case 1:
+                                                    var buffUuid = reader.ReadInt64();
+                                                    _ = reader.ReadInt32();
+                                                    break;
+                                            }
+                                            break;
+                                    }
                                     break;
                             }
                             break;
@@ -455,8 +481,52 @@ namespace BPSR_ACT_Plugin.Core
 
         private byte[] DecompressPayload(byte[] buffer)
         {
-            var decompressed = decompressor.Unwrap(buffer, int.MaxValue);
-            return decompressed.ToArray();
+            return new byte[0];
+            //var decompressed = decompressor.Unwrap(buffer, int.MaxValue);
+            //return decompressed.ToArray();
+        }
+
+        private byte[] DecompressPayloadV2(byte[] buffer)
+        {
+            if (buffer.Length < 4) return new byte[0];
+
+            var off = 0;
+            while (off + 4 <= buffer.Length)
+            {
+                var magic = BitConverter.ToUInt32(buffer, off);
+                if (magic == ZSTD_MAGIC) break;
+                if (magic >= SKIPPABLE_MAGIC_MIN && magic <= SKIPPABLE_MAGIC_MAX)
+                {
+                    if (off + 8 > buffer.Length) throw new InvalidDataException("Incomplete skippable frame header");
+                    var size = BitConverter.ToUInt32(buffer, off + 4);
+                    if (off + 8 + size > buffer.Length) throw new InvalidDataException("Incomplete skippable frame data");
+                    off += 8 + (int)size;
+                    continue;
+                }
+
+                off++;
+            }
+
+            if (off + 4 > buffer.Length) return buffer;
+
+            using (var input = new MemoryStream(buffer, off, buffer.Length - off, false))
+            {
+                using (var decoder = new DecompressionStream(input))
+                {
+                    using (var output = new MemoryStream())
+                    {
+                        const long MAX_OUT = 32L * 1024 * 1024; // 32MB limit
+                        decoder.CopyTo(output, 8192);
+                        if (output.Length > MAX_OUT)
+                        {
+                            throw new InvalidDataException("Decompressed data exceeds 32MB limit.");
+                        }
+
+                        return output.ToArray();
+
+                    }
+                }
+            }
         }
 
         private void ProcessPlayerAttrs(long playerUid, List<Attr> attrs)
@@ -545,13 +615,13 @@ namespace BPSR_ACT_Plugin.Core
                 var b = attr.RawData.ToByteArray();
                 using (var stream = new CodedInputStream(b))
                 {
-                    switch ((AttrType)attr.Id)
+                    switch (attr.Id)
                     {
-                        case AttrType.AttrName:
+                        case (int)AttrType.AttrName:
                             var name = stream.ReadString();
                             SetEnemyAttribute(enemyUid, "name", name);
                             break;
-                        case AttrType.AttrId:
+                        case (int)AttrType.AttrId:
                             var attrId = stream.ReadInt32();
                             if (MonsterMap.ContainsKey(attrId))
                             {
@@ -640,12 +710,11 @@ namespace BPSR_ACT_Plugin.Core
         private string GetEnemyFullName(long uid)
         {
             var enemyName = this.GetEnemyAttribute(uid, "name");
-            if (!String.IsNullOrEmpty(enemyName)) {
-                return $"{enemyName ?? ""}#{uid}";
+            if (!String.IsNullOrEmpty(enemyName))
+            {
+                return $"{enemyName ?? ""}${uid}";
             }
-            var enemyUuid = uid << 16;
-            MonsterMap.TryGetValue(enemyUuid, out enemyName);
-            return $"{enemyName ?? ""}#{uid}";
+            return $"${uid}";
         }
 
         private string GetDamageElement(EDamageProperty damagePropery)

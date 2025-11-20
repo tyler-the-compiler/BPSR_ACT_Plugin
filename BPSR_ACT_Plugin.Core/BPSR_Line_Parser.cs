@@ -1,15 +1,19 @@
-﻿using System;
+﻿using Advanced_Combat_Tracker;
+using PcapDotNet.Base;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static BPSR_ACT_Plugin.Core.BPSR_Enums;
+using static BPSR_ACT_Plugin.Core.BPSR_Enums_Constants;
 
 namespace BPSR_ACT_Plugin.Core
 {
     class BPSR_Line_Parser
     {
+        private object locker = new object();
         public string encounterSceneId;
         public string encounterLevelUUID;
         //public static Regex parseLine = new Regex(@"^\[(.*)\] \[(.*)\] DS: (.*) SRC: (.*) TGT: (.*) ID: (.*) VAL: (.*) HPLSN: (.*) ELEM: (.*) EXT: (.*) SCENEID: (.*) LVLID: (.*)", RegexOptions.Compiled);
@@ -19,7 +23,6 @@ namespace BPSR_ACT_Plugin.Core
 
         public struct Action
         {
-
             public string name;
             public string type;
             public string skillDSource;
@@ -36,58 +39,8 @@ namespace BPSR_ACT_Plugin.Core
                 skillDSource = String.Empty;
                 dmgValue = 0;
             }
-            public void Set(string skillId)
-            {
-                if (SkillKVPair.ContainsKey(skillId))
-                {
-                    name = SkillKVPair[skillId];
-                }
-                id = skillId;
-            }
-
-            public void Set(string skillId, int skillDmg)
-            {
-                if (SkillKVPair.ContainsKey(skillId))
-                {
-                    name = SkillKVPair[skillId];
-                }
-                id = skillId;
-                dmgValue = skillDmg;
-            }
-
-            public void Set(string aId, int skillDmg, string damageModifier)
-            {
-                if (SkillKVPair.ContainsKey(aId))
-                {
-                    name = SkillKVPair[aId];
-                }
-                id = aId;
-                dmgValue = skillDmg;
-                modifier = damageModifier;
-            }
-
-            public void Set(string aId, int skillDmg, string damageModifier, string dType, string dSource)
-            {
-                if (SkillKVPair.ContainsKey(aId))
-                {
-                    name = SkillKVPair[aId];
-                }
-                id = aId;
-                dmgValue = skillDmg;
-                modifier = damageModifier;
-                type = dType;
-                skillDSource = dSource;
-            }
             public void Set(string aId, int skillDmg, string dMod, string dType, string dSource, string element)
             {
-                if (SkillKVPair.ContainsKey(aId))
-                {
-                    name = SkillKVPair[aId];
-                }
-                else
-                {
-                    name = $"Unknown Skill ID: {aId}";
-                }
                 id = aId;
                 dmgValue = skillDmg;
                 modifier = dMod;
@@ -221,6 +174,7 @@ namespace BPSR_ACT_Plugin.Core
             public IdentityType Type
             {
                 get { return type; }
+                set { type = value; }
             }
 
             public string Raw
@@ -266,6 +220,7 @@ namespace BPSR_ACT_Plugin.Core
 
         public bool Parse(string line)
         {
+
             Reset();
             this.line = line;
 
@@ -312,6 +267,12 @@ namespace BPSR_ACT_Plugin.Core
                     source.DisplayName = split[0];
                     sName = "#" + split[1];
                 }
+                else if ((!sName.StartsWith("$")) && sName.Contains("$"))
+                {
+                    var split = sName.Split('$');
+                    source.DisplayName = split[0];
+                    sName = "$" + split[1];
+                }
 
                 if (isTargetSelf)
                 {
@@ -323,6 +284,12 @@ namespace BPSR_ACT_Plugin.Core
                     var split = tName.Split('#');
                     target.DisplayName = split[0];
                     tName = "#" + split[1];
+                }
+                else if ((!tName.StartsWith("$")) && tName.Contains("$"))
+                {
+                    var split = tName.Split('$');
+                    target.DisplayName = split[0];
+                    tName = "$" + split[1];
                 }
 
                 if (spIdSuccess)
@@ -345,13 +312,34 @@ namespace BPSR_ACT_Plugin.Core
                     target.AbilityScore = targetFightPoint.ToString();
                 }
 
-                source.Set(sName);
-                target.Set(tName);
+
+
+                source.Name = sName;
+                target.Name = tName;
+                source.Type = sName == "YOU" || sName.Contains("#") ? IdentityType.PLAYER : IdentityType.ENEMY;
+                target.Type = tName == "YOU" || tName.Contains("#") ? IdentityType.PLAYER : IdentityType.ENEMY;
                 action1.Set(skillId, Convert.ToInt32(skillDmg), damageModifier, actionType, actionCategory, element);
+                string skillName = $"Unknown Skill ID: {skillId}";
+                var getSkillSuccess = SkillKVPair.TryGetValue(skillId, out var skillData);
+                if (getSkillSuccess)
+                {
+                    skillName = skillData.SkillName;
+                    if (skillData.DamageClass > 0 && (source.Job.IsNullOrEmpty() || source.Job == ENT_JOB_UNKNOWN))
+                    {
+                        source.Job = GetProfessionFromId(skillData.DamageClass); //we can extrapolate source entity profession from skill usage
+                    }
+                    if (skillData.DamageClass == (int)NonProfessionDamageClasses.Environment)
+                    {
+                        source.Name = ENT_NAME_IGNORE;
+                        source.Job = ENT_JOB_UNKNOWN;
+                        source.Type = IdentityType.ENVIRONMENT;
+                    }
+                }
+                action1.name = skillName;
 
                 return true;
             }
-            if (lineFields[1] == LogEventIds.EVENT_HEAL.ToString())
+            else if (lineFields[1] == LogEventIds.EVENT_HEAL.ToString())
             {
                 //var line = $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}|{LogEventIds.EVENT_DAMAGE}|{sourceUid}|{destinationUid}|{skillId}|{element}|{damageValue}|{targetDamageReceived}|{isCrit}|{isLucky}";
                 timestamp = lineFields[0];
@@ -419,10 +407,27 @@ namespace BPSR_ACT_Plugin.Core
                 source.Set(sName);
                 target.Set(tName);
                 action1.Set(skillId, Convert.ToInt32(skillDmg), damageModifier, actionType, actionCategory, element);
+                string skillName = $"Unknown Skill ID: {skillId}";
+                var getSkillSuccess = SkillKVPair.TryGetValue(skillId, out var skillData);
+                if (getSkillSuccess)
+                {
+                    skillName = skillData.SkillName;
+                    if (skillData.DamageClass > 0 && (source.Job.IsNullOrEmpty() || source.Job == "???"))
+                    {
+                        source.Job = GetProfessionFromId(skillData.DamageClass); //we can extrapolate source entity profession from skill usage
+                    }
+                    if (skillData.DamageClass == (int)NonProfessionDamageClasses.Environment)
+                    {
+                        source.Name = ENT_NAME_IGNORE;
+                        source.Job = ENT_JOB_UNKNOWN;
+                        source.Type = IdentityType.ENVIRONMENT; //I guess the environment could heal?
+                    }
+                }
+                action1.name = skillName;
 
                 return true;
             }
-            if (lineFields[1] == LogEventIds.EVENT_ZONE_LOAD.ToString())
+            else if (lineFields[1] == LogEventIds.EVENT_ZONE_LOAD.ToString())
             {
                 long zoneKey;
                 var success = long.TryParse(lineFields[2], out zoneKey);
@@ -436,6 +441,7 @@ namespace BPSR_ACT_Plugin.Core
             }
 
             return false;
+
         }
         private string ConvertCNToENElement(char CN)
         {
@@ -493,7 +499,7 @@ namespace BPSR_ACT_Plugin.Core
                 case ProfessionType.SoulMusician:
                     return "Beat Performer";
                 default:
-                    return "???";
+                    return ENT_JOB_UNKNOWN;
             }
         }
     }

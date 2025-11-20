@@ -1,6 +1,7 @@
 using Advanced_Combat_Tracker;
 using BPSR_ACT_Plugin.Core;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -12,7 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
-using static BPSR_ACT_Plugin.Core.BPSR_Enums;
+using static BPSR_ACT_Plugin.Core.BPSR_Enums_Constants;
 
 
 [assembly: AssemblyTitle("BPSR_ACT_Plugin")]
@@ -33,18 +34,10 @@ namespace ACT_Plugin.Core
         SettingsSerializer xmlSettings;
         private BPSR_Line_Parser bpsrLineParser;
         private BPSR_Encounter encounter = new BPSR_Encounter();
-        private Dictionary<string, BPSR_Line_Parser.Entity> entityCache = new Dictionary<string, BPSR_Line_Parser.Entity>();
-
-        private class NPCInstances
-        {
-            public int nextId;
-
-            // Instance ID -> pretty number
-            public Dictionary<Int64, int> instances = null;
-        }
-        private Dictionary<string, NPCInstances> npcInstances = null;
+        private ConcurrentDictionary<string, BPSR_Line_Parser.Entity> entityCache = new ConcurrentDictionary<string, BPSR_Line_Parser.Entity>();
         private string rootDir;
         string pluginDirectory;
+        
         public BPSR_Plugin_Main()
         {
 
@@ -61,25 +54,10 @@ namespace ACT_Plugin.Core
             ACTSetup(pluginScreenSpace, pluginStatusText);
 
             bpsrLineParser = new BPSR_Line_Parser();
-            this.SetupBPSREnvironment();
-            var now = DateTime.Now;
-            LogFileName = $"BPSR-Log-{now.Month}{now.Day}{now.Year}-{Guid.NewGuid()}.log";
-            using (File.Create(Path.Combine(rootDir, LogFileName))) { }
-            npcInstances = new Dictionary<string, NPCInstances>();
-
-            try
-            {
-                ActGlobals.oFormActMain.ResetCheckLogs();
-            }
-            catch { }
-
-            ActGlobals.oFormActMain.BeforeLogLineRead += new LogLineEventDelegate(ParseLine);
-            ActGlobals.oFormActMain.LogFileChanged += new LogFileChangedDelegate(oFormActMain_LogFileChanged);
-            ActGlobals.oFormActMain.LogFileParentFolderName = rootDir;
-            ActGlobals.oFormActMain.LogFilePath = Path.Combine(rootDir, LogFileName);
-            ActGlobals.oFormActMain.OpenLog(false, false);
-            lblStatus.Text = "BP:SR ACT Plugin Started";
+            SetupBPSREnvironment();
+            InitializeLogSteps();
             BPSR_Packet_InterceptorV2.Instance.Start();
+            lblStatus.Text = "BP:SR ACT Plugin Started";
         }
 
         public void DeInitPlugin()
@@ -92,6 +70,7 @@ namespace ACT_Plugin.Core
         }
         private void ACTSetup(TabPage pluginScreenSpace, Label pluginStatusText)
         {
+            ActGlobals.longDuration = false;
             lblStatus = pluginStatusText;   // Hand the status label's reference to our local var
             tabPage = pluginScreenSpace;
             //xmlSettings = new SettingsSerializer(this); // Create a new settings serializer and pass it this instance
@@ -106,6 +85,25 @@ namespace ACT_Plugin.Core
         private string GetFloatCommas()
         {
             return ActGlobals.mainTableShowCommas ? "#,0.00" : "0.00";
+        }
+
+        private void InitializeLogSteps ()
+        {
+            var now = DateTime.Now;
+            LogFileName = $"BPSR-Log-{now.Month}{now.Day}{now.Year}-{Guid.NewGuid()}.log";
+            using (File.Create(Path.Combine(rootDir, LogFileName))) { }
+
+            try
+            {
+                ActGlobals.oFormActMain.ResetCheckLogs();
+            }
+            catch { }
+
+            ActGlobals.oFormActMain.BeforeLogLineRead += new LogLineEventDelegate(ParseLine);
+            ActGlobals.oFormActMain.LogFileChanged += new LogFileChangedDelegate(oFormActMain_LogFileChanged);
+            ActGlobals.oFormActMain.LogFileParentFolderName = rootDir;
+            ActGlobals.oFormActMain.LogFilePath = Path.Combine(rootDir, LogFileName);
+            ActGlobals.oFormActMain.OpenLog(false, false);
         }
         private void SetupBPSREnvironment()
         {
@@ -317,16 +315,26 @@ namespace ACT_Plugin.Core
         private BPSR_Line_Parser.Entity? GetEntity(CombatantData Data)
         {
 
-            if (entityCache.ContainsKey(Data.Name))
+            entityCache.TryGetValue(Data.Name, out BPSR_Line_Parser.Entity ent);
+            if (ent.Name == Data.Name)
             {
-                return entityCache[Data.Name];
+                return ent;
             }
-
             return null;
         }
-
+        private void FixAllyList(ref EncounterData Data, ref List<CombatantData> SelectiveAllies)
+        {
+            lock (locker)
+            {
+                var allies = Data.GetAllies();
+                Data.SetAllies(allies.Where(ally => !ally.Name.Contains("$")).ToList());
+                SelectiveAllies = SelectiveAllies.Where(ally => !ally.Name.Contains("$")).ToList();
+            }
+        }
         private string EncounterFormatSwitch(EncounterData Data, List<CombatantData> SelectiveAllies, string VarName, string Extra)
         {
+            //FixAllyList(ref Data, ref SelectiveAllies);
+
             long damage = 0;
             long healed = 0;
             int swings = 0;
@@ -718,61 +726,27 @@ namespace ACT_Plugin.Core
             var srcEntity = bpsrLineParser.source;
             var targetEntity = bpsrLineParser.target;
 
-            if (!entityCache.ContainsKey(srcEntity.Name))
-            {
-                entityCache.Add(srcEntity.Name, srcEntity);
-            }
-            else
-            {
-                srcEntity.AbilityScore = ((!String.IsNullOrEmpty(srcEntity.AbilityScore)) && srcEntity.AbilityScore != "-1") ? srcEntity.AbilityScore : entityCache[srcEntity.Name].AbilityScore;
-                srcEntity.Job = ((!String.IsNullOrEmpty(srcEntity.Job)) && srcEntity.Job != "???") ? srcEntity.Job : entityCache[srcEntity.Name].Job;
-                entityCache[srcEntity.Name] = srcEntity;
-            }
+            var cachedSrcEntity = entityCache.GetOrAdd(srcEntity.Name, srcEntity);
+            var cachedTargetEntity = entityCache.GetOrAdd(targetEntity.Name, targetEntity);
+            srcEntity.AbilityScore = ((!String.IsNullOrEmpty(srcEntity.AbilityScore)) && srcEntity.AbilityScore != "-1") ? srcEntity.AbilityScore : cachedSrcEntity.AbilityScore;
+            srcEntity.Job = ((!String.IsNullOrEmpty(srcEntity.Job)) && srcEntity.Job != ENT_JOB_UNKNOWN) ? srcEntity.Job : cachedSrcEntity.Job;
 
-            if (!entityCache.ContainsKey(targetEntity.Name))
-            {
-                entityCache.Add(targetEntity.Name, targetEntity);
-            }
-            else
-            {
-                targetEntity.AbilityScore = ((!String.IsNullOrEmpty(targetEntity.AbilityScore)) && targetEntity.AbilityScore != "-1") ? targetEntity.AbilityScore : entityCache[targetEntity.Name].AbilityScore;
-                targetEntity.Job = ((!String.IsNullOrEmpty(targetEntity.Job)) && targetEntity.Job != "???") ? targetEntity.Job : entityCache[targetEntity.Name].Job;
-                entityCache[targetEntity.Name] = targetEntity;
-            }
+            targetEntity.AbilityScore = ((!String.IsNullOrEmpty(targetEntity.AbilityScore)) && targetEntity.AbilityScore != "-1") ? targetEntity.AbilityScore : cachedTargetEntity.AbilityScore;
+            targetEntity.Job = ((!String.IsNullOrEmpty(targetEntity.Job)) && targetEntity.Job != ENT_JOB_UNKNOWN) ? targetEntity.Job : cachedTargetEntity.Job;
+            entityCache[srcEntity.Name] = srcEntity;
+            entityCache[targetEntity.Name] = targetEntity;
+
 
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_PLAYER_DIE.ToString())
             {
-
-                encounter.CombatEvent(bpsrLineParser, isImport, time);
-
-                if (!ActGlobals.oFormActMain.InCombat)
-                {
-                    return;
-                }
-
-                if (!ActGlobals.oFormActMain.SetEncounter(time, srcEntity.Name, targetEntity.Name))
-                {
-                    return;
-                }
-
-                var mSwing = new MasterSwing(
-                    (int)SwingTypeEnum.Melee,
-                    bpsrLineParser.action1.modifier?.Contains("Crit") ?? false,
-                    Dnum.Death,
-                    DateTime.Now,
-                    ActGlobals.oFormActMain.GlobalTimeSorter,
-                    bpsrLineParser.action1.name,
-                    srcEntity.Name,
-                    bpsrLineParser.action1.element,
-                    targetEntity.Name
-                );
-                ActGlobals.oFormActMain.AddCombatAction(mSwing);
+                ParseDeath(isImport, time);
+                
             }
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_ZONE_LOAD.ToString())
             {
                 if (ActGlobals.oFormActMain.InCombat && bpsrLineParser.action1.modifier != "DirtySync") //don't exit combat when using dirtysync to load zone name later on
                 {
-                    encounter.ExitCombat(bpsrLineParser, false, time);
+                    encounter.ExitCombat(bpsrLineParser, isImport, time);
                 }
                 lock (locker)
                 {
@@ -784,20 +758,19 @@ namespace ACT_Plugin.Core
                         }));
                     }
                 }
-                npcInstances.Clear();
             }
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_DAMAGE.ToString())
             {
                 log.detectedType = (srcEntity.DisplayName == ActGlobals.charName) ?
                         Color.DarkRed.ToArgb() :
                         Color.Red.ToArgb();
-                ParseDamage(false, time);
+                ParseDamage(isImport, time);
             }
             if (bpsrLineParser.action1.type == LogEventIds.EVENT_HEAL.ToString())
             {
                 if (!ActGlobals.oFormActMain.InCombat)
                     return;
-                ParseHealing(false, time);
+                ParseHealing(isImport, time);
             }
 
             encounter.TimeoutCheck(isImport, time);
@@ -807,6 +780,12 @@ namespace ACT_Plugin.Core
             var action = bpsrLineParser.action1;
             var srcEntity = bpsrLineParser.source;
             var targetEntity = bpsrLineParser.target;
+            var isSourcePlayer = srcEntity.Type == IdentityType.PLAYER;
+            var isTargetPlayer = targetEntity.Type == IdentityType.PLAYER;
+
+            if (isSourcePlayer && isTargetPlayer) {
+                return; //do nothing in case of player damaging player to not skew DPS
+            }
 
             encounter.CombatEvent(bpsrLineParser, isImport, time);
 
@@ -835,6 +814,7 @@ namespace ACT_Plugin.Core
                 action.element,
                 targetEntity.Name
             );
+            mSwing.Tags.Add("isLucky", bpsrLineParser.action1.modifier == "Lucky");
             ActGlobals.oFormActMain.AddCombatAction(mSwing);
         }
         public void ParseHealing(bool isImport, DateTime time)
@@ -869,12 +849,47 @@ namespace ACT_Plugin.Core
                 action.element,
                 targetEntity.Name
             );
+            mSwing.Tags.Add("isLucky", bpsrLineParser.action1.modifier == "Lucky");
+            ActGlobals.oFormActMain.AddCombatAction(mSwing);
+        }
+        public void ParseDeath(bool isImport, DateTime time)
+        {
+            var action = bpsrLineParser.action1;
+            var srcEntity = bpsrLineParser.source;
+            var targetEntity = bpsrLineParser.target;
+            var isSourcePlayer = srcEntity.Type == IdentityType.PLAYER;
+            var isTargetPlayer = targetEntity.Type == IdentityType.PLAYER;
+
+            if (!ActGlobals.oFormActMain.InCombat)
+            {
+                return; //do nothing if we die out of combat
+            }
+
+            encounter.CombatEvent(bpsrLineParser, isImport, time);
+
+            if (!ActGlobals.oFormActMain.SetEncounter(time, srcEntity.Name, targetEntity.Name))
+            {
+                return;
+            }
+
+            var mSwing = new MasterSwing(
+                (int)SwingTypeEnum.Melee,
+                bpsrLineParser.action1.modifier?.Contains("Crit") ?? false,
+                Dnum.Death,
+                DateTime.Now,
+                ActGlobals.oFormActMain.GlobalTimeSorter,
+                bpsrLineParser.action1.name,
+                //we need to record deaths, but if a player dies to another player's skill (which I guess could happen?), we do not want to remove them from the ally list
+                //nor do we want that skill to count towards their dps
+                isSourcePlayer ? srcEntity.Name : ENT_NAME_IGNORE, 
+                bpsrLineParser.action1.element,
+                targetEntity.Name
+            );
             ActGlobals.oFormActMain.AddCombatAction(mSwing);
         }
         void oFormActMain_LogFileChanged(bool IsImport, string NewLogFileName)
         {
             bpsrLineParser.Reset();
-            npcInstances.Clear();
             return;
         }
         void LoadSettings()
@@ -927,15 +942,9 @@ namespace ACT_Plugin.Core
         private string GetBossName(string uidTag)
         {
             if (uidTag == "Encounter") { return uidTag; }
+            if (uidTag.Contains("#")) { return uidTag; }
             this.entityCache.TryGetValue(uidTag, out BPSR_Line_Parser.Entity bossEntity);
             var enemyName = bossEntity.DisplayName;
-            if (!String.IsNullOrEmpty(enemyName))
-            {
-                return enemyName;
-            }
-            long.TryParse(uidTag.Replace("#", ""), out long uid);
-            var enemyUuid = uid << 16;
-            MonsterMap.TryGetValue(enemyUuid, out enemyName);
             if (!String.IsNullOrEmpty(enemyName))
             {
                 return enemyName;
@@ -947,17 +956,4 @@ namespace ACT_Plugin.Core
             throw new NotImplementedException();
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

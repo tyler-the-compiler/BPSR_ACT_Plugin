@@ -139,7 +139,7 @@
     <Compile Include="BPSR_Packet_InterceptorV2.cs" />
     <Compile Include="BPSR_Plugin_Main.cs" />
     <Compile Include="BPSR_Encounter.cs" />
-    <Compile Include="BPSR_Enums.cs" />
+    <Compile Include="BPSR_Enums_Constants.cs" />
     <Compile Include="BPSR_Event_Logger.cs" />
     <Compile Include="BPSR_Line_Parser.cs" />
     <Compile Include="BPSR_Packet_Interceptor.cs" />

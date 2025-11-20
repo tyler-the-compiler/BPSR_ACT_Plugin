@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static BPSR_ACT_Plugin.Core.BPSR_Enums;
+using static BPSR_ACT_Plugin.Core.BPSR_Enums_Constants;
 
 namespace BPSR_ACT_Plugin.Core
 {

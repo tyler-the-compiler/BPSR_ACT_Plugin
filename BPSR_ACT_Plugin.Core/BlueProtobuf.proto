@@ -205,7 +205,7 @@ message CharSerialize {
 	SceneData SceneData = 3;
 	SceneLuaData SceneLuaData = 4;
 	PioneerData PioneerData = 5;
-	//BuffDBInfo BuffInfo = 6;
+	BuffDBInfo BuffInfo = 6;
 	ItemPackage ItemPackage = 7;
 	QuestDataList QuestList = 8;
 	SettingData SettingData = 9;
@@ -296,6 +296,33 @@ message CharSerialize {
 	FightPoint FightPoint = 96;
 	SignInfo Sign = 97;
 	CharStatisticsData CharStatisticsData = 98;		*/
+}
+
+message BuffDBInfo {
+	uint32 MaxID = 1;
+	
+	message AllBuffDbDataDict {
+		uint32 k = 1;
+		BuffDBData value = 2;
+	}
+
+	repeated AllBuffDbDataDict AllBuffDbData = 2;
+}
+
+message BuffDBData {
+	int64 BuffUuid = 1;
+	int64 FirerId = 2;
+	uint32 BuffConfigId = 3;
+	uint32 BaseId = 4;
+	uint32 Level = 5;
+	uint32 Layer = 6;
+	int32 Duration = 7;
+	int32 Count = 8;
+	int64 CreateTime = 9;
+	int32 PartId = 10;
+	int32 CreateSceneId = 11;
+	repeated string CustomParamsKey = 12;
+	repeated int32 CustomParams = 13;
 }
 
 message CharBaseInfo {
